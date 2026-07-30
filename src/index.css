@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-script {
+    font-family: 'Dancing Script', 'Satisfy', cursive;
+  }
+  .font-satisfy {
+    font-family: 'Satisfy', cursive;
+  }
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .font-fredoka {
+    font-family: 'Fredoka', cursive, sans-serif;
+  }
+  .font-body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* Soft Gingham / Checkered background like in the image */
+  .bg-gingham {
+    background-color: #FFF0F3;
+    background-image: 
+      linear-gradient(90deg, rgba(244, 172, 183, 0.15) 50%, transparent 50%),
+      linear-gradient(rgba(244, 172, 183, 0.15) 50%, transparent 50%);
+    background-size: 24px 24px;
+  }
+
+  .bg-pink-subtle {
+    background: linear-gradient(180deg, #FFF0F3 0%, #FFE5EC 50%, #FFF5F7 100%);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FFF0F3;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #F4ACB7;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #FF85A1;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "O Doce Mundo da Lavínia",
+  "description": "Website oficial da confeitaria artesanal O Doce Mundo da Lavínia - Bolos gourmet, cupcakes, docinhos de festa e kits sob encomenda com amor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

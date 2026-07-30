@@ -1,0 +1,1243 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  X,
+  Lock,
+  LogOut,
+  Upload,
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+  RotateCcw,
+  Camera,
+  DollarSign,
+  Phone,
+  User,
+  Image as ImageIcon,
+  Sparkles,
+  HelpCircle,
+  Eye,
+  Settings,
+  UserPlus,
+  Mail,
+  ArrowLeft,
+  AlertCircle,
+} from 'lucide-react';
+import { useAdmin } from '../context/AdminContext';
+import { ProductCategory, Product } from '../types';
+import { authService } from '../services/authService';
+
+export const AdminPanelModal: React.FC = () => {
+  const {
+    isLoggedIn,
+    isAdminOpen,
+    hasAdminExists,
+    closeAdminModal,
+    loginWithEmail,
+    signUpAdmin,
+    sendPasswordReset,
+    logout,
+    siteConfig,
+    updateSiteConfig,
+    products,
+    updateProduct,
+    addProduct,
+    deleteProduct,
+    uploadImage,
+    resetToDefaults,
+  } = useAdmin();
+
+  // Auth Screen Mode ('signup' for first time, 'login', 'forgot')
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot'>(() =>
+    hasAdminExists ? 'login' : 'signup'
+  );
+
+  useEffect(() => {
+    if (!hasAdminExists) {
+      setAuthMode('signup');
+    }
+  }, [hasAdminExists]);
+
+  // Signup form state
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  // Recovery form state
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+
+  // Auth feedback
+  const [authError, setAuthError] = useState('');
+  const [authSuccessMsg, setAuthSuccessMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Settings: Change Password
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [passwordUpdateMsg, setPasswordUpdateMsg] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Active Admin Tab
+  const [activeTab, setActiveTab] = useState<'products' | 'profile' | 'logo' | 'contact'>('products');
+
+  // New product modal state inside admin panel
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [newProdName, setNewProdName] = useState('');
+  const [newProdCategory, setNewProdCategory] = useState<ProductCategory>('bolos');
+  const [newProdPrice, setNewProdPrice] = useState('');
+  const [newProdDescription, setNewProdDescription] = useState('');
+  const [newProdImage, setNewProdImage] = useState('');
+  const [newProdBadge, setNewProdBadge] = useState('');
+
+  // Editing existing product state
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState<string>('');
+  const [editName, setEditName] = useState<string>('');
+  const [editImage, setEditImage] = useState<string>('');
+  const [editDescription, setEditDescription] = useState<string>('');
+  const [editBadge, setEditBadge] = useState<string>('');
+
+  if (!isAdminOpen) return null;
+
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (!signupName.trim()) {
+      setAuthError('Por favor, informe seu nome completo.');
+      return;
+    }
+    if (!signupEmail.trim() || !signupEmail.includes('@') || !signupEmail.includes('.')) {
+      setAuthError('Por favor, informe um e-mail válido.');
+      return;
+    }
+    if (signupPassword.length < 8) {
+      setAuthError('A senha deve conter no mínimo 8 caracteres.');
+      return;
+    }
+    if (signupPassword !== signupConfirmPassword) {
+      setAuthError('As senhas digitadas não coincidem.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = await signUpAdmin(signupName, signupEmail, signupPassword);
+    setIsSubmitting(false);
+
+    if (!res.success) {
+      setAuthError(res.error || 'Erro ao realizar o cadastro do administrador.');
+    } else if (res.error) {
+      setAuthSuccessMsg(res.error);
+    }
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (!loginEmail.trim() || !loginEmail.includes('@')) {
+      setAuthError('Por favor, digite um e-mail válido.');
+      return;
+    }
+    if (!loginPassword) {
+      setAuthError('Por favor, digite sua senha.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = await loginWithEmail(loginEmail, loginPassword);
+    setIsSubmitting(false);
+
+    if (!res.success) {
+      setAuthError(res.error || 'E-mail ou senha incorretos.');
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    const targetEmail = loginEmail.trim() || signupEmail.trim() || recoveryEmail.trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      setAuthError('Por favor, informe seu e-mail de acesso no campo de e-mail para solicitar o reenvio.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setAuthError('');
+    setAuthSuccessMsg('');
+    const res = await authService.resendConfirmationEmail(targetEmail);
+    setIsSubmitting(false);
+
+    if (res.success) {
+      setAuthSuccessMsg(res.message);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  const handleRecoverySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (!recoveryEmail.trim() || !recoveryEmail.includes('@')) {
+      setAuthError('Por favor, informe seu e-mail cadastrado.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = await sendPasswordReset(recoveryEmail);
+    setIsSubmitting(false);
+
+    if (res.success) {
+      setAuthSuccessMsg(res.message);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onSuccess: (url: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('A imagem é muito grande. Escolha uma foto de até 5MB.');
+        return;
+      }
+      const url = await uploadImage(file);
+      if (url) {
+        onSuccess(url);
+      }
+    }
+  };
+
+  const startEditingProduct = (prod: Product) => {
+    setEditingProductId(prod.id);
+    setEditPrice(prod.price.toString());
+    setEditName(prod.name);
+    setEditImage(prod.image);
+    setEditDescription(prod.description);
+    setEditBadge(prod.badge || '');
+  };
+
+  const saveEditedProduct = (id: string) => {
+    const priceNum = parseFloat(editPrice.replace(',', '.'));
+    updateProduct(id, {
+      name: editName,
+      price: isNaN(priceNum) ? 0 : priceNum,
+      image: editImage,
+      description: editDescription,
+      badge: editBadge || undefined,
+    });
+    setEditingProductId(null);
+  };
+
+  const handleSaveNewProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProdName || !newProdPrice) return;
+
+    const priceNum = parseFloat(newProdPrice.replace(',', '.'));
+    addProduct({
+      name: newProdName,
+      category: newProdCategory,
+      price: isNaN(priceNum) ? 0 : priceNum,
+      description: newProdDescription || 'Doce artesanal feito com carinho pela Lavínia.',
+      image: newProdImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
+      badge: newProdBadge || undefined,
+    });
+
+    // Reset new product form
+    setNewProdName('');
+    setNewProdPrice('');
+    setNewProdDescription('');
+    setNewProdImage('');
+    setNewProdBadge('');
+    setIsAddingProduct(false);
+  };
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.2 }}
+          className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-[#F4ACB7]/40 overflow-hidden my-8"
+        >
+          {/* Header Bar */}
+          <div className="bg-gradient-to-r from-[#3D231D] via-[#5C3A21] to-[#3D231D] p-6 text-white relative">
+            <button
+              onClick={closeAdminModal}
+              className="absolute top-5 right-5 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              title="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-[#E85D75] text-white shadow-lg">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-2xs uppercase tracking-widest text-[#FFCAD4] font-bold">
+                  Acesso Restrito da Confeiteira
+                </span>
+                <h2 className="font-display text-2xl font-bold">Painel de Controle — Lavínia</h2>
+              </div>
+            </div>
+          </div>
+
+          {/* Body Content */}
+          {!isLoggedIn ? (
+            <div className="p-6 sm:p-10 max-w-md mx-auto space-y-5">
+              {authMode === 'signup' && (
+                /* CRIAR CONTA DE ADMINISTRADOR (PRIMEIRO ACESSO) */
+                <div className="space-y-4">
+                  <div className="text-center space-y-1.5">
+                    <div className="w-14 h-14 rounded-full bg-[#FFE5EC] text-[#E85D75] mx-auto flex items-center justify-center shadow-inner">
+                      <UserPlus className="w-7 h-7" />
+                    </div>
+                    <h3 className="font-display font-bold text-xl text-[#3D231D]">
+                      Criar Conta de Administrador
+                    </h3>
+                    <p className="text-xs text-[#5C3A21]">
+                      Primeiro acesso ao sistema. Cadastre seus dados para proteger e gerenciar seu site.
+                    </p>
+                  </div>
+
+                  {authError && (
+                    <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                        <span>{authError}</span>
+                      </div>
+                      {(authError.toLowerCase().includes('não confirmado') || authError.toLowerCase().includes('not confirmed')) && (
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={handleResendConfirmation}
+                          className="w-full py-2 px-3 rounded-lg bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 mt-1"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>{isSubmitting ? 'Reenviando...' : 'Reenviar E-mail de Confirmação'}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {authSuccessMsg && (
+                    <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-700 flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                      <span>{authSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSignUpSubmit} className="space-y-3 text-left text-xs">
+                    <div>
+                      <label className="block font-bold text-[#3D231D] mb-1">Nome Completo:</label>
+                      <input
+                        type="text"
+                        required
+                        value={signupName}
+                        onChange={(e) => setSignupName(e.target.value)}
+                        placeholder="Ex: Lavínia Aguiar"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#3D231D] mb-1">E-mail Administrativo:</label>
+                      <input
+                        type="email"
+                        required
+                        value={signupEmail}
+                        onChange={(e) => setSignupEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#3D231D] mb-1">Senha (mínimo 8 caracteres):</label>
+                      <input
+                        type="password"
+                        required
+                        minLength={8}
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                        placeholder="Digite sua senha..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#3D231D] mb-1">Confirmar Senha:</label>
+                      <input
+                        type="password"
+                        required
+                        minLength={8}
+                        value={signupConfirmPassword}
+                        onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                        placeholder="Repita sua senha..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-3 rounded-xl bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                    >
+                      <span>{isSubmitting ? 'Criando Conta...' : 'Criar Conta de Administrador'}</span>
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {authMode === 'login' && (
+                /* LOGIN TRADICIONAL SUPABASE */
+                <div className="space-y-4">
+                  <div className="text-center space-y-1.5">
+                    <div className="w-14 h-14 rounded-full bg-[#FFE5EC] text-[#E85D75] mx-auto flex items-center justify-center shadow-inner">
+                      <Lock className="w-7 h-7" />
+                    </div>
+                    <h3 className="font-display font-bold text-xl text-[#3D231D]">
+                      Acesso ao Painel
+                    </h3>
+                    <p className="text-xs text-[#5C3A21]">
+                      Digite seu e-mail e senha para gerenciar o site (produtos, preços, fotos e contatos).
+                    </p>
+                  </div>
+
+                  {authError && (
+                    <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                        <span>{authError}</span>
+                      </div>
+                      {(authError.toLowerCase().includes('não confirmado') || authError.toLowerCase().includes('not confirmed')) && (
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={handleResendConfirmation}
+                          className="w-full py-2 px-3 rounded-lg bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 mt-1"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>{isSubmitting ? 'Reenviando...' : 'Reenviar E-mail de Confirmação'}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {authSuccessMsg && (
+                    <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-700 flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                      <span>{authSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleLoginSubmit} className="space-y-3.5 text-left text-xs">
+                    <div>
+                      <label className="block font-bold text-[#3D231D] mb-1">E-mail de Acesso:</label>
+                      <input
+                        type="email"
+                        required
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        autoFocus
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-[#3D231D]">Senha:</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuthError('');
+                            setAuthSuccessMsg('');
+                            setAuthMode('forgot');
+                          }}
+                          className="text-2xs font-bold text-[#E85D75] hover:underline"
+                        >
+                          Esqueci minha senha
+                        </button>
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="Digite sua senha..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-3 rounded-xl bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <span>{isSubmitting ? 'Entrando...' : 'Entrar no Painel'}</span>
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {authMode === 'forgot' && (
+                /* RECUPERAR SENHA */
+                <div className="space-y-4">
+                  <div className="text-center space-y-1.5">
+                    <div className="w-14 h-14 rounded-full bg-[#FFE5EC] text-[#E85D75] mx-auto flex items-center justify-center shadow-inner">
+                      <Mail className="w-7 h-7" />
+                    </div>
+                    <h3 className="font-display font-bold text-xl text-[#3D231D]">
+                      Recuperar Senha
+                    </h3>
+                    <p className="text-xs text-[#5C3A21]">
+                      Informe seu e-mail cadastrado para receber o link de redefinição.
+                    </p>
+                  </div>
+
+                  {authError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  {authSuccessMsg && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-700 flex items-center gap-2">
+                      <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                      <span>{authSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleRecoverySubmit} className="space-y-3.5 text-left text-xs">
+                    <div>
+                      <label className="block font-bold text-[#3D231D] mb-1">E-mail Cadastrado:</label>
+                      <input
+                        type="email"
+                        required
+                        value={recoveryEmail}
+                        onChange={(e) => setRecoveryEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        autoFocus
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-3 rounded-xl bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <span>{isSubmitting ? 'Enviando...' : 'Enviar E-mail de Recuperação'}</span>
+                    </button>
+
+                    <div className="text-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthError('');
+                          setAuthSuccessMsg('');
+                          setAuthMode('login');
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#5C3A21] hover:text-[#E85D75]"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Voltar ao Login</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Logged In Dashboard Interface */
+            <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              
+              {/* Top Navigation Tabs & Quick Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#F4ACB7]/30">
+                
+                {/* Tabs */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setActiveTab('products')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+                      activeTab === 'products'
+                        ? 'bg-[#E85D75] text-white shadow-md'
+                        : 'bg-[#FFF0F3] text-[#5C3A21] hover:bg-[#FFE5EC]'
+                    }`}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Cardápio & Preços</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+                      activeTab === 'profile'
+                        ? 'bg-[#E85D75] text-white shadow-md'
+                        : 'bg-[#FFF0F3] text-[#5C3A21] hover:bg-[#FFE5EC]'
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Foto de Perfil & Bio</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('logo')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+                      activeTab === 'logo'
+                        ? 'bg-[#E85D75] text-white shadow-md'
+                        : 'bg-[#FFF0F3] text-[#5C3A21] hover:bg-[#FFE5EC]'
+                    }`}
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Logo & Marca</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('contact')}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+                      activeTab === 'contact'
+                        ? 'bg-[#E85D75] text-white shadow-md'
+                        : 'bg-[#FFF0F3] text-[#5C3A21] hover:bg-[#FFE5EC]'
+                    }`}
+                  >
+                    <Phone className="w-4 h-4" />
+                    <span>WhatsApp & Senha</span>
+                  </button>
+                </div>
+
+                {/* Logout & Reset Buttons */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <button
+                    onClick={resetToDefaults}
+                    className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-2xs font-semibold flex items-center gap-1 transition-colors"
+                    title="Restaurar valores padrão"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Restaurar Originais</span>
+                  </button>
+
+                  <button
+                    onClick={logout}
+                    className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-2xs font-bold flex items-center gap-1 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sair</span>
+                  </button>
+                </div>
+
+              </div>
+
+              {/* TAB 1: CARDÁPIO, PREÇOS E FOTOS DE PRODUTOS */}
+              {activeTab === 'products' && (
+                <div className="space-y-6">
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-display font-bold text-lg text-[#3D231D]">
+                        Gerenciador do Cardápio ({products.length} itens)
+                      </h3>
+                      <p className="text-xs text-[#5C3A21]">
+                        Clique no preço ou foto para editar em tempo real no seu site.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setIsAddingProduct(true)}
+                      className="px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs flex items-center gap-2 shadow transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Adicionar Novo Doce</span>
+                    </button>
+                  </div>
+
+                  {/* Add Product Inline Modal / Form */}
+                  {isAddingProduct && (
+                    <motion.form
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      onSubmit={handleSaveNewProduct}
+                      className="p-5 bg-[#FFF0F3] rounded-2xl border border-[#F4ACB7] space-y-4"
+                    >
+                      <div className="flex items-center justify-between border-b border-[#F4ACB7]/40 pb-2">
+                        <h4 className="font-bold text-sm text-[#3D231D] flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-[#E85D75]" /> Adicionar Novo Doce ao Cardápio
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingProduct(false)}
+                          className="text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <label className="block font-semibold text-[#3D231D] mb-1">Nome do Doce:</label>
+                          <input
+                            type="text"
+                            required
+                            value={newProdName}
+                            onChange={(e) => setNewProdName(e.target.value)}
+                            placeholder="Ex: Bolo Red Velvet Gourmet"
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-[#3D231D] mb-1">Categoria:</label>
+                          <select
+                            value={newProdCategory}
+                            onChange={(e) => setNewProdCategory(e.target.value as ProductCategory)}
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7]"
+                          >
+                            <option value="bolos">Bolos & Bentô</option>
+                            <option value="cupcakes">Cupcakes</option>
+                            <option value="docinhos">Docinhos de Festa</option>
+                            <option value="copos">Copos da Felicidade</option>
+                            <option value="kits">Kits Festa</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-[#3D231D] mb-1">Preço (R$):</label>
+                          <input
+                            type="text"
+                            required
+                            value={newProdPrice}
+                            onChange={(e) => setNewProdPrice(e.target.value)}
+                            placeholder="Ex: 45.00"
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-[#3D231D] mb-1">Destaque / Selo (opcional):</label>
+                          <input
+                            type="text"
+                            value={newProdBadge}
+                            onChange={(e) => setNewProdBadge(e.target.value)}
+                            placeholder="Ex: Novo! 🍓"
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block font-semibold text-[#3D231D] mb-1">Descrição:</label>
+                          <textarea
+                            rows={2}
+                            value={newProdDescription}
+                            onChange={(e) => setNewProdDescription(e.target.value)}
+                            placeholder="Descreva os recheios, sabores e detalhes..."
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block font-semibold text-[#3D231D] mb-1">Foto do Doce:</label>
+                          <div className="flex flex-col sm:flex-row items-center gap-3">
+                            <input
+                              type="text"
+                              value={newProdImage}
+                              onChange={(e) => setNewProdImage(e.target.value)}
+                              placeholder="Cole o link da foto (URL) ou envie um arquivo do seu celular ->"
+                              className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7]"
+                            />
+                            <label className="cursor-pointer shrink-0 px-3 py-2 bg-white border border-[#E85D75] text-[#E85D75] rounded-lg font-bold flex items-center gap-1.5 hover:bg-[#FFE5EC]">
+                              <Upload className="w-4 h-4" />
+                              <span>Enviar do dispositivo</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleFileUpload(e, (url) => setNewProdImage(url))}
+                              />
+                            </label>
+                          </div>
+                          {newProdImage && (
+                            <img
+                              src={newProdImage}
+                              alt="Prévia"
+                              className="mt-2 w-20 h-20 object-cover rounded-xl border border-pink-300"
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          type="submit"
+                          className="px-5 py-2 bg-[#E85D75] text-white font-bold rounded-xl text-xs hover:bg-[#d44860]"
+                        >
+                          Salvar Doce no Cardápio
+                        </button>
+                      </div>
+                    </motion.form>
+                  )}
+
+                  {/* Product Cards Table / List */}
+                  <div className="grid grid-cols-1 gap-3">
+                    {products.map((prod) => {
+                      const isEditing = editingProductId === prod.id;
+
+                      return (
+                        <div
+                          key={prod.id}
+                          className="p-4 bg-white rounded-2xl border border-[#F4ACB7]/40 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between"
+                        >
+                          {/* Image & Main Info */}
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="relative group shrink-0">
+                              <img
+                                src={isEditing ? editImage : prod.image}
+                                alt={prod.name}
+                                className="w-16 h-16 rounded-xl object-cover border border-pink-200"
+                              />
+                              {isEditing && (
+                                <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center text-white cursor-pointer opacity-90 hover:opacity-100">
+                                  <Camera className="w-5 h-5" />
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => handleFileUpload(e, (url) => setEditImage(url))}
+                                  />
+                                </label>
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              {isEditing ? (
+                                <div className="space-y-1.5">
+                                  <input
+                                    type="text"
+                                    value={editName}
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    className="w-full px-2 py-1 border border-pink-300 rounded text-xs font-bold text-[#3D231D]"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={editDescription}
+                                    onChange={(e) => setEditDescription(e.target.value)}
+                                    placeholder="Descrição curta"
+                                    className="w-full px-2 py-1 border border-pink-200 rounded text-2xs text-[#5C3A21]"
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-2xs font-bold text-gray-500">URL Foto:</span>
+                                    <input
+                                      type="text"
+                                      value={editImage}
+                                      onChange={(e) => setEditImage(e.target.value)}
+                                      className="flex-1 px-2 py-0.5 border border-pink-200 rounded text-2xs"
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-bold text-sm text-[#3D231D] truncate">
+                                      {prod.name}
+                                    </h4>
+                                    {prod.badge && (
+                                      <span className="px-2 py-0.5 rounded-full bg-[#FFE5EC] text-[#E85D75] text-3xs font-bold shrink-0">
+                                        {prod.badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-2xs text-[#5C3A21] line-clamp-1 mt-0.5">
+                                    {prod.description}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Price & Actions */}
+                          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100">
+                            <div className="text-right">
+                              <span className="block text-3xs text-gray-400 uppercase font-bold">Preço</span>
+                              {isEditing ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs font-bold text-[#3D231D]">R$</span>
+                                  <input
+                                    type="text"
+                                    value={editPrice}
+                                    onChange={(e) => setEditPrice(e.target.value)}
+                                    className="w-20 px-2 py-1 border border-emerald-400 rounded text-sm font-bold text-emerald-600 bg-emerald-50"
+                                  />
+                                </div>
+                              ) : (
+                                <span className="font-display font-bold text-base text-[#E85D75]">
+                                  R$ {prod.price.toFixed(2).replace('.', ',')}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => saveEditedProduct(prod.id)}
+                                    className="p-2 rounded-xl bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 hover:bg-emerald-600 shadow"
+                                    title="Salvar alterações"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                    <span>Salvar</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingProductId(null)}
+                                    className="p-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditingProduct(prod)}
+                                    className="p-2 rounded-xl bg-[#FFF0F3] hover:bg-[#FFE5EC] text-[#E85D75] transition-colors"
+                                    title="Editar preço e informações"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`Excluir o doce "${prod.name}" do cardápio?`)) {
+                                        deleteProduct(prod.id);
+                                      }
+                                    }}
+                                    className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+                                    title="Excluir do cardápio"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              )}
+
+              {/* TAB 2: FOTO DE PERFIL & BIO DA LAVÍNIA */}
+              {activeTab === 'profile' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-display font-bold text-lg text-[#3D231D]">
+                      Perfil da Confeiteira (Sessão "Sobre a Lavínia")
+                    </h3>
+                    <p className="text-xs text-[#5C3A21]">
+                      Altere a foto da Lavínia, seu nome de exibição e os textos de apresentação do site.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-[#FFF0F3] p-6 rounded-2xl border border-[#F4ACB7]/40">
+                    
+                    {/* Photo Picker */}
+                    <div className="flex flex-col items-center text-center space-y-3">
+                      <div className="relative group">
+                        <img
+                          src={siteConfig.profileImage}
+                          alt="Foto da Lavínia"
+                          className="w-36 h-36 rounded-2xl object-cover border-4 border-white shadow-md"
+                        />
+                        <label className="absolute inset-0 bg-black/40 rounded-2xl flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Camera className="w-6 h-6 mb-1" />
+                          <span className="text-3xs font-bold">Trocar Foto</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) =>
+                              handleFileUpload(e, (url) => updateSiteConfig({ profileImage: url }))
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      <div className="w-full space-y-2">
+                        <label className="block text-3xs font-bold text-[#5C3A21]">Ou cole a URL da Imagem:</label>
+                        <input
+                          type="text"
+                          value={siteConfig.profileImage}
+                          onChange={(e) => updateSiteConfig({ profileImage: e.target.value })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#F4ACB7] text-2xs"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    </div>
+
+                    {/* Text Inputs */}
+                    <div className="sm:col-span-2 space-y-4 text-xs">
+                      <div>
+                        <label className="block font-bold text-[#3D231D] mb-1">Seu Nome:</label>
+                        <input
+                          type="text"
+                          value={siteConfig.founderName}
+                          onChange={(e) => updateSiteConfig({ founderName: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7] font-bold text-[#3D231D]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-[#3D231D] mb-1">Título / Subtítulo:</label>
+                        <input
+                          type="text"
+                          value={siteConfig.founderTitle}
+                          onChange={(e) => updateSiteConfig({ founderTitle: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-[#3D231D] mb-1">Primeiro Parágrafo da História:</label>
+                        <textarea
+                          rows={3}
+                          value={siteConfig.profileBio1}
+                          onChange={(e) => updateSiteConfig({ profileBio1: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-[#3D231D] mb-1">Segundo Parágrafo da História:</label>
+                        <textarea
+                          rows={2}
+                          value={siteConfig.profileBio2}
+                          onChange={(e) => updateSiteConfig({ profileBio2: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-[#3D231D] mb-1">Terceiro Parágrafo / Mensagem Final:</label>
+                        <textarea
+                          rows={2}
+                          value={siteConfig.profileBio3}
+                          onChange={(e) => updateSiteConfig({ profileBio3: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: LOGO & MARCA */}
+              {activeTab === 'logo' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-display font-bold text-lg text-[#3D231D]">
+                      Identidade Visual & Logo
+                    </h3>
+                    <p className="text-xs text-[#5C3A21]">
+                      Você pode usar o selo/badge clássico artesanal ou enviar sua própria imagem de logo personalizada.
+                    </p>
+                  </div>
+
+                  <div className="p-6 bg-[#FFF0F3] rounded-2xl border border-[#F4ACB7]/40 space-y-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                      
+                      {/* Logo Preview */}
+                      <div className="text-center shrink-0">
+                        <span className="block text-2xs font-bold text-[#5C3A21] mb-2">Prévia Atual:</span>
+                        {siteConfig.logoUrl ? (
+                          <img
+                            src={siteConfig.logoUrl}
+                            alt="Logo Personalizada"
+                            className="w-28 h-28 object-contain rounded-2xl bg-white p-2 border border-pink-300 shadow-md mx-auto"
+                          />
+                        ) : (
+                          <div className="w-28 h-28 rounded-2xl bg-white p-3 border border-pink-300 shadow-md flex flex-col items-center justify-center mx-auto text-center">
+                            <span className="font-display font-bold text-xs text-[#3D231D]">O Doce Mundo</span>
+                            <span className="font-script text-lg text-[#E85D75]">Mundo</span>
+                            <span className="text-3xs text-gray-500 font-semibold">(Logo SVG Padrão)</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Controls */}
+                      <div className="flex-1 space-y-3 text-xs w-full">
+                        <div>
+                          <label className="block font-bold text-[#3D231D] mb-1">
+                            Imagem do Logo Personalizado:
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={siteConfig.logoUrl}
+                              onChange={(e) => updateSiteConfig({ logoUrl: e.target.value })}
+                              placeholder="URL da foto da sua logo ou use o botão ->"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
+                            />
+                            <label className="cursor-pointer px-3 py-2 bg-white border border-[#E85D75] text-[#E85D75] rounded-xl font-bold flex items-center gap-1.5 hover:bg-[#FFE5EC] shrink-0">
+                              <Upload className="w-4 h-4" />
+                              <span>Enviar Imagem</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) =>
+                                  handleFileUpload(e, (url) => updateSiteConfig({ logoUrl: url }))
+                                }
+                              />
+                            </label>
+                          </div>
+                          {siteConfig.logoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => updateSiteConfig({ logoUrl: '' })}
+                              className="text-3xs font-bold text-red-500 hover:underline mt-1"
+                            >
+                              Remover imagem e voltar para o selo artesanal padrão
+                            </button>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-[#3D231D] mb-1">Frase / Slogan do Selo:</label>
+                          <input
+                            type="text"
+                            value={siteConfig.logoSlogan}
+                            onChange={(e) => updateSiteConfig({ logoSlogan: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
+                          />
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: WHATSAPP & CONTATO */}
+              {activeTab === 'contact' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-display font-bold text-lg text-[#3D231D]">
+                      WhatsApp de Atendimento & Segurança
+                    </h3>
+                    <p className="text-xs text-[#5C3A21]">
+                      Atualize o número para onde os pedidos do carrinho serão enviados no WhatsApp.
+                    </p>
+                  </div>
+
+                  <div className="p-6 bg-[#FFF0F3] rounded-2xl border border-[#F4ACB7]/40 space-y-4 text-xs">
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-bold text-[#3D231D] mb-1">
+                          Número Formatado para Exibição:
+                        </label>
+                        <input
+                          type="text"
+                          value={siteConfig.phoneDisplay}
+                          onChange={(e) => updateSiteConfig({ phoneDisplay: e.target.value })}
+                          placeholder="Ex: +55 73 9952-7100"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7] font-bold text-[#3D231D]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-[#3D231D] mb-1">
+                          Número numérico do WhatsApp (apenas números com DDD):
+                        </label>
+                        <input
+                          type="text"
+                          value={siteConfig.phoneRaw}
+                          onChange={(e) =>
+                            updateSiteConfig({ phoneRaw: e.target.value.replace(/\D/g, '') })
+                          }
+                          placeholder="Ex: 557399527100"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7] font-bold text-[#25D366]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#F4ACB7]/40 space-y-2">
+                      <label className="block font-bold text-[#3D231D] mb-1">
+                        Alterar Senha de Administrador (Supabase Auth):
+                      </label>
+                      <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <input
+                          type="password"
+                          value={newAdminPassword}
+                          onChange={(e) => setNewAdminPassword(e.target.value)}
+                          placeholder="Digite a nova senha (mínimo 8 caracteres)..."
+                          className="w-full sm:w-72 px-3 py-2 rounded-xl bg-white border border-[#F4ACB7] text-xs font-bold"
+                        />
+                        <button
+                          type="button"
+                          disabled={isUpdatingPassword}
+                          onClick={async () => {
+                            if (newAdminPassword.length < 8) {
+                              setPasswordUpdateMsg('A senha deve ter pelo menos 8 caracteres.');
+                              return;
+                            }
+                            setIsUpdatingPassword(true);
+                            const res = await authService.updatePassword(newAdminPassword);
+                            setIsUpdatingPassword(false);
+                            setPasswordUpdateMsg(res.message);
+                            if (res.success) setNewAdminPassword('');
+                          }}
+                          className="px-4 py-2 bg-[#E85D75] hover:bg-[#d44860] text-white font-bold rounded-xl text-xs shrink-0 disabled:opacity-50 transition-colors"
+                        >
+                          {isUpdatingPassword ? 'Atualizando...' : 'Atualizar Senha'}
+                        </button>
+                      </div>
+                      {passwordUpdateMsg && (
+                        <p className="text-xs font-semibold text-[#E85D75] mt-1">{passwordUpdateMsg}</p>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Save confirmation banner */}
+              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between text-xs text-emerald-800 font-semibold">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Todas as suas alterações são salvas e aplicadas em tempo real!</span>
+                </div>
+
+                <button
+                  onClick={closeAdminModal}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors"
+                >
+                  Concluir & Ver Site
+                </button>
+              </div>
+
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
