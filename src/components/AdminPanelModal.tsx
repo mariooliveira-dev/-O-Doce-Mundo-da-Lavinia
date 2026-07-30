@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -19,7 +19,6 @@ import {
   HelpCircle,
   Eye,
   Settings,
-  UserPlus,
   Mail,
   ArrowLeft,
   AlertCircle,
@@ -32,10 +31,8 @@ export const AdminPanelModal: React.FC = () => {
   const {
     isLoggedIn,
     isAdminOpen,
-    hasAdminExists,
     closeAdminModal,
     loginWithEmail,
-    signUpAdmin,
     sendPasswordReset,
     logout,
     siteConfig,
@@ -48,24 +45,8 @@ export const AdminPanelModal: React.FC = () => {
     resetToDefaults,
   } = useAdmin();
 
-  // Auth Screen Mode ('signup' for first time, 'login', 'forgot')
-  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot'>(() =>
-    hasAdminExists ? 'login' : 'signup'
-  );
-
-  useEffect(() => {
-    if (hasAdminExists) {
-      setAuthMode('login');
-    } else {
-      setAuthMode('signup');
-    }
-  }, [hasAdminExists]);
-
-  // Signup form state
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  // Auth Screen Mode ('login', 'forgot')
+  const [authMode, setAuthMode] = useState<'login' | 'forgot'>('login');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -106,39 +87,6 @@ export const AdminPanelModal: React.FC = () => {
 
   if (!isAdminOpen) return null;
 
-  const handleSignUpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSuccessMsg('');
-
-    if (!signupName.trim()) {
-      setAuthError('Por favor, informe seu nome completo.');
-      return;
-    }
-    if (!signupEmail.trim() || !signupEmail.includes('@') || !signupEmail.includes('.')) {
-      setAuthError('Por favor, informe um e-mail válido.');
-      return;
-    }
-    if (signupPassword.length < 8) {
-      setAuthError('A senha deve conter no mínimo 8 caracteres.');
-      return;
-    }
-    if (signupPassword !== signupConfirmPassword) {
-      setAuthError('As senhas digitadas não coincidem.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    const res = await signUpAdmin(signupName, signupEmail, signupPassword);
-    setIsSubmitting(false);
-
-    if (!res.success) {
-      setAuthError(res.error || 'Erro ao realizar o cadastro do administrador.');
-    } else if (res.error) {
-      setAuthSuccessMsg(res.error);
-    }
-  };
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -163,7 +111,7 @@ export const AdminPanelModal: React.FC = () => {
   };
 
   const handleResendConfirmation = async () => {
-    const targetEmail = loginEmail.trim() || signupEmail.trim() || recoveryEmail.trim();
+    const targetEmail = loginEmail.trim() || recoveryEmail.trim();
     if (!targetEmail || !targetEmail.includes('@')) {
       setAuthError('Por favor, informe seu e-mail de acesso no campo de e-mail para solicitar o reenvio.');
       return;
@@ -300,124 +248,6 @@ export const AdminPanelModal: React.FC = () => {
           {/* Body Content */}
           {!isLoggedIn ? (
             <div className="p-6 sm:p-10 max-w-md mx-auto space-y-5">
-              {authMode === 'signup' && (
-                /* CRIAR CONTA DE ADMINISTRADOR (PRIMEIRO ACESSO) */
-                <div className="space-y-4">
-                  <div className="text-center space-y-1.5">
-                    <div className="w-14 h-14 rounded-full bg-[#FFE5EC] text-[#E85D75] mx-auto flex items-center justify-center shadow-inner">
-                      <UserPlus className="w-7 h-7" />
-                    </div>
-                    <h3 className="font-display font-bold text-xl text-[#3D231D]">
-                      Criar Conta de Administrador
-                    </h3>
-                    <p className="text-xs text-[#5C3A21]">
-                      Primeiro acesso ao sistema. Cadastre seus dados para proteger e gerenciar seu site.
-                    </p>
-                  </div>
-
-                  {authError && (
-                    <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
-                        <span>{authError}</span>
-                      </div>
-                      {(authError.toLowerCase().includes('não confirmado') || authError.toLowerCase().includes('not confirmed')) && (
-                        <button
-                          type="button"
-                          disabled={isSubmitting}
-                          onClick={handleResendConfirmation}
-                          className="w-full py-2 px-3 rounded-lg bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 mt-1"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                          <span>{isSubmitting ? 'Reenviando...' : 'Reenviar E-mail de Confirmação'}</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {authSuccessMsg && (
-                    <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-700 flex items-center gap-2">
-                      <Check className="w-4 h-4 shrink-0 text-emerald-600" />
-                      <span>{authSuccessMsg}</span>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSignUpSubmit} className="space-y-3 text-left text-xs">
-                    <div>
-                      <label className="block font-bold text-[#3D231D] mb-1">Nome Completo:</label>
-                      <input
-                        type="text"
-                        required
-                        value={signupName}
-                        onChange={(e) => setSignupName(e.target.value)}
-                        placeholder="Ex: Lavínia Aguiar"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#3D231D] mb-1">E-mail Administrativo:</label>
-                      <input
-                        type="email"
-                        required
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        placeholder="seu@email.com"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#3D231D] mb-1">Senha (mínimo 8 caracteres):</label>
-                      <input
-                        type="password"
-                        required
-                        minLength={8}
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        placeholder="Digite sua senha..."
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#3D231D] mb-1">Confirmar Senha:</label>
-                      <input
-                        type="password"
-                        required
-                        minLength={8}
-                        value={signupConfirmPassword}
-                        onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                        placeholder="Repita sua senha..."
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#F4ACB7] bg-white focus:ring-2 focus:ring-[#E85D75] outline-none text-sm"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-3 rounded-xl bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
-                    >
-                      <span>{isSubmitting ? 'Criando Conta...' : 'Criar Conta de Administrador'}</span>
-                    </button>
-
-                    <div className="text-center pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthError('');
-                          setAuthSuccessMsg('');
-                          setAuthMode('login');
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-[#5C3A21] hover:text-[#E85D75]"
-                      >
-                        <span>Já possui uma conta? Fazer Login</span>
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
               {authMode === 'login' && (
                 /* LOGIN TRADICIONAL SUPABASE */
                 <div className="space-y-4">

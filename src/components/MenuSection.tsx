@@ -30,18 +30,34 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return products.filter((product) => {
+      // Quando há termo de busca, pesquisa em todo o cardápio independente da aba de categoria
       const matchesCategory =
-        activeCategory === 'todos' || product.category === activeCategory;
+        query ? true : (activeCategory === 'todos' || product.category === activeCategory);
+
       if (!query) return matchesCategory;
 
       const nameMatch = product.name.toLowerCase().includes(query);
       const descMatch = product.description.toLowerCase().includes(query);
+      const categoryMatch = product.category.toLowerCase().includes(query);
+      const badgeMatch = product.badge ? product.badge.toLowerCase().includes(query) : false;
       const tagsMatch = product.tags?.some((t) => t.toLowerCase().includes(query));
       const toppingsMatch = product.toppings?.some((top) =>
         top.name.toLowerCase().includes(query)
       );
+      const flavorMatch = product.options?.flavors?.some((f) => f.toLowerCase().includes(query));
+      const fillingMatch = product.options?.fillings?.some((f) => f.toLowerCase().includes(query));
 
-      return matchesCategory && (nameMatch || descMatch || tagsMatch || toppingsMatch);
+      return (
+        matchesCategory &&
+        (nameMatch ||
+          descMatch ||
+          categoryMatch ||
+          badgeMatch ||
+          tagsMatch ||
+          toppingsMatch ||
+          flavorMatch ||
+          fillingMatch)
+      );
     });
   }, [products, activeCategory, searchQuery]);
 
@@ -102,15 +118,15 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
             {/* Quick Search Chips & Search Status */}
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs px-2">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[#5C3A21] font-semibold">Mais buscados:</span>
-                {['Cenoura', 'Ninho', 'Vulcão', 'Chocolate'].map((term) => (
+                <span className="text-[#5C3A21] font-semibold text-2xs uppercase tracking-wider">Mais buscados:</span>
+                {['Cenoura', 'Ninho', 'Vulcão', 'Chocolate', 'Goiabada', 'Churros'].map((term) => (
                   <button
                     key={term}
                     type="button"
-                    onClick={() => setSearchQuery(term)}
-                    className={`px-2.5 py-1 rounded-full text-2xs font-bold transition-all ${
+                    onClick={() => setSearchQuery(searchQuery.toLowerCase() === term.toLowerCase() ? '' : term)}
+                    className={`px-2.5 py-1 rounded-full text-2xs font-bold transition-all cursor-pointer ${
                       searchQuery.toLowerCase() === term.toLowerCase()
-                        ? 'bg-[#E85D75] text-white shadow-2xs'
+                        ? 'bg-[#E85D75] text-white shadow-2xs scale-105'
                         : 'bg-white hover:bg-[#FFE5EC] text-[#E85D75] border border-[#F4ACB7]/40'
                     }`}
                   >
@@ -120,8 +136,8 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
               </div>
 
               {searchQuery.trim() && (
-                <span className="text-[#E85D75] font-bold">
-                  {filteredProducts.length} {filteredProducts.length === 1 ? 'bolo encontrado' : 'bolos encontrados'}
+                <span className="text-[#E85D75] font-bold text-2xs bg-[#FFE5EC] px-2.5 py-1 rounded-full border border-[#F4ACB7]/40">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'resultado encontrado' : 'resultados encontrados'}
                 </span>
               )}
             </div>
@@ -148,23 +164,26 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
         </div>
 
         {/* Products Grid */}
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="wait">
           {filteredProducts.length > 0 ? (
             <motion.div
-              key={activeCategory + searchQuery}
+              key={`${activeCategory}-${searchQuery}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
               {filteredProducts.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  initial={{ opacity: 0, y: 35 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  exit={{ opacity: 0, y: -15, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{
-                    duration: 0.45,
-                    delay: Math.min(index * 0.05, 0.35),
-                    ease: [0.22, 1, 0.36, 1],
+                    duration: 0.35,
+                    delay: Math.min(index * 0.04, 0.28),
+                    ease: [0.25, 0.1, 0.25, 1],
                   }}
                 >
                   <ProductCard
@@ -177,26 +196,31 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
             </motion.div>
           ) : (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
+              key="no-results"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
               className="text-center py-16 bg-white rounded-3xl border border-[#F4ACB7]/30 p-8 space-y-3"
             >
               <span className="text-4xl">🥮</span>
               <h3 className="font-display font-bold text-xl text-[#3D231D]">
-                Nenhum bolo encontrado
+                {searchQuery.trim()
+                  ? `Nenhum bolo ou doce encontrado para "${searchQuery}"`
+                  : 'Nenhum bolo encontrado nesta categoria'}
               </h3>
               <p className="text-sm text-[#5C3A21]">
-                Tente buscar com outros termos ou escolha outra categoria de bolos.
+                Tente buscar por outros ingredientes (como Cenoura, Ninho, Chocolate) ou escolha outra categoria.
               </p>
               <button
+                type="button"
                 onClick={() => {
                   setActiveCategory('todos');
                   setSearchQuery('');
                 }}
-                className="mt-2 px-5 py-2 rounded-full bg-[#FFE5EC] text-[#E85D75] font-bold text-xs hover:bg-[#E85D75] hover:text-white transition-colors"
+                className="mt-2 px-5 py-2.5 rounded-full bg-[#E85D75] text-white font-bold text-xs hover:bg-[#d44860] transition-colors shadow-xs cursor-pointer"
               >
-                Ver todos os bolos
+                Limpar Busca e Ver Todo o Cardápio
               </button>
             </motion.div>
           )}
