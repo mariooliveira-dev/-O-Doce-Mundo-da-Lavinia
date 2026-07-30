@@ -18,10 +18,10 @@ export const LogoBadge: React.FC<LogoBadgeProps> = ({
     size === 'sm'
       ? 'scale-75'
       : size === 'md'
-      ? 'scale-90 md:scale-100'
+      ? 'scale-80 xs:scale-90 md:scale-100'
       : size === 'lg'
-      ? 'scale-100 md:scale-110'
-      : 'scale-110 md:scale-125';
+      ? 'scale-85 sm:scale-100 md:scale-110'
+      : 'scale-95 sm:scale-110 md:scale-125';
 
   return (
     <div className={`flex flex-col items-center text-center select-none ${className}`}>

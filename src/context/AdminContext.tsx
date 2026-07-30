@@ -116,15 +116,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ]);
 
         if (mounted) {
-          setHasAdminExists(adminRegistered);
+          if (currentSession?.user) {
+            setIsLoggedIn(true);
+            setHasAdminExists(true);
+          } else {
+            setHasAdminExists(adminRegistered);
+          }
           if (remoteConfig) {
             setSiteConfig(remoteConfig);
           }
           if (remoteProducts && remoteProducts.length > 0) {
             setProducts(remoteProducts);
-          }
-          if (currentSession?.user) {
-            setIsLoggedIn(true);
           }
         }
       } catch (err) {

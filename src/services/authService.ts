@@ -35,27 +35,58 @@ export const authService = {
    * Verifica se já existe ao menos um usuário administrador cadastrado no Supabase
    */
   async hasAdminUser(): Promise<boolean> {
+    // 1. Verificação rápida em localStorage
+    if (localStorage.getItem('docemundo_has_admin') === 'true') {
+      return true;
+    }
+
     if (!isSupabaseConfigured || !supabase) {
       return localStorage.getItem('docemundo_has_admin') === 'true';
     }
 
     try {
+      // 2. Se houver uma sessão ativa de usuário no Supabase Auth, o admin existe
+      const session = await this.getSession();
+      if (session?.user) {
+        localStorage.setItem('docemundo_has_admin', 'true');
+        return true;
+      }
+
+      // 3. Consulta se existe algum registro na tabela 'usuarios'
       const { count, error } = await supabase
         .from('usuarios')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact' });
 
-      if (error) {
-        console.warn('Erro ao consultar usuarios no Supabase:', error.message);
-        return localStorage.getItem('docemundo_has_admin') === 'true';
-      }
-
-      const exists = count !== null && count > 0;
-      if (exists) {
+      if (!error && count !== null && count > 0) {
         localStorage.setItem('docemundo_has_admin', 'true');
+        return true;
       }
-      return exists || localStorage.getItem('docemundo_has_admin') === 'true';
-    } catch {
-      return localStorage.getItem('docemundo_has_admin') === 'true';
+
+      // 4. Se a consulta em 'usuarios' não retornou registros ou houve restrição de RLS,
+      // verifica se a tabela 'configuracoes' já foi criada e populada
+      const { data: configData, error: configError } = await supabase
+        .from('configuracoes')
+        .select('id')
+        .limit(1);
+
+      if (!configError && configData && configData.length > 0) {
+        localStorage.setItem('docemundo_has_admin', 'true');
+        return true;
+      }
+
+      // 5. Se houve erro ao consultar a tabela 'usuarios' e 'configuracoes',
+      // assumimos que o sistema já está em produção com admin por segurança (exibe tela de Login)
+      if (error && configError) {
+        console.warn('Erro ao consultar Supabase Auth/Tabelas:', error.message || configError.message);
+        return true;
+      }
+
+      // Se todas as checagens retornarem confirmadamente vazio:
+      return false;
+    } catch (err) {
+      console.warn('Exceção ao verificar admin no Supabase:', err);
+      // Em caso de falha de conexão, prioriza a tela de login para segurança do sistema
+      return true;
     }
   },
 

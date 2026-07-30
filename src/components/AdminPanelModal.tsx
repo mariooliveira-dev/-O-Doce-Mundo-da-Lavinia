@@ -54,7 +54,9 @@ export const AdminPanelModal: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!hasAdminExists) {
+    if (hasAdminExists) {
+      setAuthMode('login');
+    } else {
       setAuthMode('signup');
     }
   }, [hasAdminExists]);
@@ -398,6 +400,20 @@ export const AdminPanelModal: React.FC = () => {
                     >
                       <span>{isSubmitting ? 'Criando Conta...' : 'Criar Conta de Administrador'}</span>
                     </button>
+
+                    <div className="text-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthError('');
+                          setAuthSuccessMsg('');
+                          setAuthMode('login');
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#5C3A21] hover:text-[#E85D75]"
+                      >
+                        <span>Já possui uma conta? Fazer Login</span>
+                      </button>
+                    </div>
                   </form>
                 </div>
               )}
