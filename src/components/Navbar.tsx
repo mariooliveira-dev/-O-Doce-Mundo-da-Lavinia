@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingBag, Menu as MenuIcon, X, Lock } from 'lucide-react';
+import { ShoppingBag, Menu as MenuIcon, X, Lock, Sun, Moon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAdmin } from '../context/AdminContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface NavbarProps {
   cartCount: number;
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isPulsing, setIsPulsing] = useState(false);
   const prevCountRef = useRef(cartCount);
   const { siteConfig, openAdminModal, isLoggedIn } = useAdmin();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (cartCount > prevCountRef.current) {
@@ -93,8 +95,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             ))}
           </nav>
 
-          {/* Right Action Buttons: Cart & Discreet ADM Lock */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Action Buttons: Theme Selector, Cart & Discreet ADM Lock */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Theme Selector Toggle Button */}
+            <motion.button
+              onClick={toggleTheme}
+              whileTap={{ scale: 0.9, rotate: 15 }}
+              className="p-2.5 rounded-full bg-white border border-[#F4ACB7] text-[#E85D75] hover:bg-[#FFE5EC] transition-all shadow-sm flex items-center justify-center cursor-pointer"
+              aria-label={theme === 'dark' ? 'Alternar para Modo Claro' : 'Alternar para Modo Noturno'}
+              title={theme === 'dark' ? 'Modo Claro (Pastel)' : 'Modo Noturno (Escuro)'}
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-5 h-5 text-amber-400 transition-transform hover:rotate-45" />
+              ) : (
+                <Moon className="w-5 h-5 text-[#E85D75] transition-transform hover:-rotate-12" />
+              )}
+            </motion.button>
+
             {/* Cart Button */}
             <motion.button
               onClick={onOpenCart}
@@ -155,6 +172,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {link.name}
               </a>
             ))}
+
+            {/* Mobile Theme Switch Row */}
+            <button
+              onClick={() => {
+                toggleTheme();
+              }}
+              className="py-2.5 px-3 rounded-xl bg-[#FFE5EC]/60 border border-[#F4ACB7]/40 text-[#3D231D] font-bold text-sm flex items-center justify-between transition-all"
+            >
+              <span className="flex items-center gap-2">
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-[#E85D75]" />
+                )}
+                <span>Tema: {theme === 'dark' ? 'Modo Noturno (Chocolate)' : 'Modo Claro (Pastel)'}</span>
+              </span>
+              <span className="text-2xs font-bold uppercase tracking-wider bg-white px-2 py-0.5 rounded-full text-[#E85D75] border border-[#F4ACB7]">
+                {theme === 'dark' ? 'Trocar para Sol' : 'Trocar para Lua'}
+              </span>
+            </button>
 
             <button
               onClick={() => {

@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5F7"/>
+      <stop offset="50%" stop-color="#FFE5EC"/>
+      <stop offset="100%" stop-color="#FFCAD4"/>
+    </linearGradient>
+
+    <!-- Badge Drop Shadow -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#5C3A21" flood-opacity="0.15"/>
+    </filter>
+
+    <!-- Inner Glow/Shadow -->
+    <filter id="innerShadow">
+      <feComponentTransfer in="SourceAlpha">
+        <feFuncA type="linear" slope="0.1"/>
+      </feComponentTransfer>
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite operator="out" in2="SourceAlpha" result="inverse"/>
+      <feFlood flood-color="#3D231D" result="color"/>
+      <feComposite operator="in" in2="inverse" result="shadow"/>
+      <feComposite operator="over" in2="SourceGraphic"/>
+    </filter>
+
+    <style>
+      .title-font { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-weight: 700; }
+      .script-font { font-family: 'Dancing Script', 'Satisfy', cursive; font-weight: 700; }
+      .sans-font { font-family: 'Plus Jakarta Sans', 'Fredoka', sans-serif; font-weight: 600; }
+    </style>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <!-- Decorative Background Hearts & Sparkles -->
+  <g fill="#F4ACB7" opacity="0.35">
+    <path d="M120 100 C120 90 130 80 142 80 C154 80 162 90 162 100 C162 118 142 135 142 135 C142 135 122 118 122 100 Z"/>
+    <path d="M1050 140 C1050 130 1060 120 1072 120 C1084 120 1092 130 1092 140 C1092 158 1072 175 1072 175 C1072 175 1052 158 1052 140 Z"/>
+    <path d="M180 500 C180 490 190 480 202 480 C214 480 222 490 222 500 C222 518 202 535 202 535 C202 535 182 518 182 500 Z"/>
+    <path d="M1000 480 C1000 470 1010 460 1022 460 C1034 460 1042 470 1042 480 C1042 498 1022 515 1022 515 C1022 515 1002 498 1002 480 Z"/>
+    <circle cx="280" cy="180" r="8"/>
+    <circle cx="920" cy="220" r="10"/>
+    <circle cx="340" cy="460" r="6"/>
+    <circle cx="860" cy="440" r="8"/>
+  </g>
+
+  <!-- Main Circular Logo Badge Container -->
+  <g transform="translate(600, 315)" filter="url(#shadow)">
+    <!-- Outer Pink Circle Frame -->
+    <circle r="240" fill="#FFE5EC" stroke="#F4ACB7" stroke-width="8"/>
+
+    <!-- Inner White Circle with Dashed Pink Border -->
+    <circle r="215" fill="#FFFFFF" stroke="#FF85A1" stroke-width="4" stroke-dasharray="10 8"/>
+
+    <!-- Decorative Top Sparkles -->
+    <text x="-120" y="-150" fill="#F4ACB7" font-size="22" class="script-font">♡ ✨</text>
+    <text x="90" y="-150" fill="#F4ACB7" font-size="22" class="script-font">✨ ♡</text>
+
+    <!-- CUPCAKE ILLUSTRATION -->
+    <g transform="translate(0, -90)">
+      <!-- Base Plate -->
+      <ellipse cx="0" cy="48" rx="42" ry="7" fill="#F8BBD0" opacity="0.8"/>
+
+      <!-- Liner -->
+      <path d="M-30,10 L-22,46 C-22,48 -18,50 -12,50 L12,50 C18,50 22,48 22,46 L30,10 Z" fill="#F4ACB7" stroke="#D87093" stroke-width="3"/>
+      <line x1="-18" y1="10" x2="-12" y2="48" stroke="#FFE5EC" stroke-width="3"/>
+      <line x1="0" y1="10" x2="0" y2="48" stroke="#FFE5EC" stroke-width="3"/>
+      <line x1="18" y1="10" x2="12" y2="48" stroke="#FFE5EC" stroke-width="3"/>
+
+      <!-- Cream Frosting -->
+      <path d="M-40,10 C-46,10 -48,-2 -40,-12 C-34,-20 -20,-20 -15,-12 C-10,-24 8,-26 12,-18 C18,-26 34,-24 38,-12 C46,-20 54,-12 50,0 C56,10 46,14 40,10 Z" fill="#FFCAD4" stroke="#F4ACB7" stroke-width="3"/>
+      <path d="M-28,-12 C-28,-26 -10,-42 0,-44 C10,-42 28,-26 28,-12 C18,-20 8,-22 0,-18 C-8,-22 -18,-20 -28,-12 Z" fill="#FFE5EC"/>
+      
+      <!-- Sprinkles -->
+      <circle cx="-15" cy="-15" r="3" fill="#FF85A1"/>
+      <circle cx="15" cy="-15" r="3" fill="#FF85A1"/>
+      <circle cx="0" cy="-28" r="3" fill="#FF85A1"/>
+
+      <!-- Cherry Stem & Cherry -->
+      <path d="M0,-52 Q12,-70 24,-74" fill="none" stroke="#5C3A21" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="0" cy="-52" r="12" fill="#E85D75"/>
+      <ellipse cx="-4" cy="-55" rx="3" ry="2" fill="#FFFFFF" opacity="0.7"/>
+    </g>
+
+    <!-- BRAND TEXT: "O Doce Mundo" -->
+    <text x="0" y="25" text-anchor="middle" fill="#5C3A21" font-size="24" letter-spacing="3" class="sans-font" font-weight="700">O DOCE MUNDO</text>
+    
+    <!-- BRAND TEXT: "da Lavínia" -->
+    <text x="0" y="80" text-anchor="middle" fill="#E85D75" font-size="52" class="title-font">da Lavínia</text>
+
+    <!-- Ribbon / Divider -->
+    <path d="M-110,105 Q0,120 110,105" fill="none" stroke="#F4ACB7" stroke-width="3"/>
+
+    <!-- TAGLINE: "CONFEITARIA ARTESANAL" -->
+    <text x="0" y="132" text-anchor="middle" fill="#5C3A21" font-size="15" letter-spacing="4" class="sans-font">CONFEITARIA ARTESANAL</text>
+  </g>
+</svg>

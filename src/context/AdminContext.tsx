@@ -158,6 +158,31 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(siteConfig));
   }, [siteConfig]);
 
+  // Sincroniza dynamic Open Graph e Twitter Card meta tags com a logo oficial do site
+  useEffect(() => {
+    const rawLogo = siteConfig.logoUrl ? siteConfig.logoUrl.trim() : '';
+    let logoImageToUse = rawLogo || '/logo-og.svg';
+
+    if (logoImageToUse.startsWith('/') && typeof window !== 'undefined') {
+      logoImageToUse = window.location.origin + logoImageToUse;
+    }
+
+    const setMetaTag = (selector: string, attr: string, value: string) => {
+      let el = document.querySelector(selector);
+      if (!el) {
+        el = document.createElement('meta');
+        const attrName = selector.includes('property=') ? 'property' : 'name';
+        const attrVal = selector.split('=')[1].replace(/["'\]]/g, '');
+        el.setAttribute(attrName, attrVal);
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+    };
+
+    setMetaTag('meta[property="og:image"]', 'content', logoImageToUse);
+    setMetaTag('meta[name="twitter:image"]', 'content', logoImageToUse);
+  }, [siteConfig.logoUrl]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
   }, [products]);

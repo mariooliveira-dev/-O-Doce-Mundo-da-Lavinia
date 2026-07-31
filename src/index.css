@@ -50,3 +50,146 @@ html {
   scroll-behavior: smooth;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
+
+/* ==========================================================================
+   ELEGANT DARK MODE (MODO NOTURNO - CHOCOLATE INTENSO & ROSÊ LUXO)
+   ========================================================================== */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #140F11;
+  color: #F7EBEF;
+}
+
+/* Dark scrollbar */
+html.dark ::-webkit-scrollbar-track {
+  background: #1C1417;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4A2E36;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #FF85A1;
+}
+
+/* Base Surfaces & Layout Backgrounds */
+html.dark .min-h-screen,
+html.dark main {
+  background-color: #140F11 !important;
+}
+
+html.dark .bg-\[\#FFF5F7\],
+html.dark .bg-\[\#FFF0F3\],
+html.dark .bg-\[\#FFF8FA\],
+html.dark .bg-pink-subtle {
+  background: #1A1316 !important;
+}
+
+html.dark .bg-gingham {
+  background-color: #1A1316 !important;
+  background-image: 
+    linear-gradient(90deg, rgba(88, 52, 63, 0.25) 50%, transparent 50%),
+    linear-gradient(rgba(88, 52, 63, 0.25) 50%, transparent 50%) !important;
+}
+
+/* Card Surfaces & Modals */
+html.dark .bg-white {
+  background-color: #241A1E !important;
+  color: #F7EBEF !important;
+}
+
+html.dark .bg-white\/90,
+html.dark .bg-white\/95,
+html.dark .bg-white\/80 {
+  background-color: rgba(36, 26, 30, 0.92) !important;
+}
+
+/* Secondary & Highlight Backgrounds */
+html.dark .bg-\[\#FFE5EC\],
+html.dark .bg-\[\#FFF0F5\] {
+  background-color: #38242A !important;
+}
+
+html.dark .hover\:bg-\[\#FFE5EC\]:hover {
+  background-color: #482C35 !important;
+}
+
+html.dark .bg-\[\#FFF7F9\] {
+  background-color: #2D1F24 !important;
+}
+
+/* Typography & Contrast */
+html.dark .text-\[\#3D231D\],
+html.dark .text-\[\#2A1810\] {
+  color: #F9EDF1 !important;
+}
+
+html.dark .text-\[\#5C3A21\],
+html.dark .text-\[\#6B4F3A\],
+html.dark .text-gray-600,
+html.dark .text-gray-700 {
+  color: #DFCACE !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+  color: #B59B9F !important;
+}
+
+html.dark .text-\[\#E85D75\] {
+  color: #FF8CA3 !important;
+}
+
+html.dark .hover\:text-\[\#E85D75\]:hover {
+  color: #FFB3C1 !important;
+}
+
+/* Borders & Dividers */
+html.dark .border-\[\#F4ACB7\],
+html.dark .border-\[\#F4ACB7\]\/20,
+html.dark .border-\[\#F4ACB7\]\/30,
+html.dark .border-\[\#F4ACB7\]\/40,
+html.dark .border-\[\#FFE5EC\],
+html.dark .border-\[\#FFF0F3\],
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #4A3037 !important;
+}
+
+/* Inputs, Textareas & Selects */
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="number"],
+html.dark input[type="tel"],
+html.dark input[type="search"],
+html.dark textarea,
+html.dark select {
+  background-color: #2D1F24 !important;
+  color: #F9EDF1 !important;
+  border-color: #553740 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #A3898E !important;
+}
+
+/* Buttons in Dark Mode */
+html.dark .bg-\[\#E85D75\] {
+  background-color: #E85D75 !important;
+}
+
+html.dark .bg-\[\#E85D75\]:hover,
+html.dark .hover\:bg-\[\#d44860\]:hover {
+  background-color: #F06E84 !important;
+}
+
+/* Footer & Darker sections */
+html.dark footer {
+  background-color: #120D0F !important;
+  border-top-color: #38242A !important;
+}

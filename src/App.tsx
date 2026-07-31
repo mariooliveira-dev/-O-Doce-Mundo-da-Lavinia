@@ -12,6 +12,7 @@ import { AdminPanelModal } from './components/AdminPanelModal';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { ScrollToTop } from './components/ScrollToTop';
 import { AdminProvider } from './context/AdminContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { CartItem } from './types';
 
 export default function App() {
@@ -81,66 +82,68 @@ export default function App() {
   };
 
   return (
-    <AdminProvider>
-      <div className="min-h-screen bg-[#FFF5F7] text-[#3D231D] flex flex-col font-body selection:bg-[#F4ACB7] selection:text-white">
-        
-        {/* Sticky Top Header Navigation */}
-        <Navbar
-          cartCount={cartItems.reduce((acc, curr) => acc + curr.quantity, 0)}
-          onOpenCart={() => setIsCartOpen(true)}
-        />
-
-        {/* Main Page Layout */}
-        <main className="flex-1">
+    <ThemeProvider>
+      <AdminProvider>
+        <div className="min-h-screen bg-[#FFF5F7] text-[#3D231D] flex flex-col font-body selection:bg-[#F4ACB7] selection:text-white">
           
-          {/* Hero Section */}
-          <Hero
-            onScrollToMenu={scrollToMenu}
+          {/* Sticky Top Header Navigation */}
+          <Navbar
+            cartCount={cartItems.reduce((acc, curr) => acc + curr.quantity, 0)}
+            onOpenCart={() => setIsCartOpen(true)}
           />
 
-          {/* About Lavinia Section */}
-          <AboutLavinia />
+          {/* Main Page Layout */}
+          <main className="flex-1">
+            
+            {/* Hero Section */}
+            <Hero
+              onScrollToMenu={scrollToMenu}
+            />
 
-          {/* Digital Product Menu */}
-          <MenuSection
-            onAddToCart={handleAddToCart}
+            {/* About Lavinia Section */}
+            <AboutLavinia />
+
+            {/* Digital Product Menu */}
+            <MenuSection
+              onAddToCart={handleAddToCart}
+            />
+
+            {/* Instagram Feed Section */}
+            <InstagramFeed />
+
+            {/* Customer Testimonials */}
+            <Testimonials />
+
+            {/* Frequently Asked Questions */}
+            <FAQ />
+
+          </main>
+
+          {/* Footer */}
+          <Footer />
+
+          {/* Cart & WhatsApp Checkout Drawer */}
+          <CartDrawer
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            cartItems={cartItems}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+            onClearCart={handleClearCart}
           />
 
-          {/* Instagram Feed Section */}
-          <InstagramFeed />
+          {/* Discreet Admin Management Modal */}
+          <AdminPanelModal />
 
-          {/* Customer Testimonials */}
-          <Testimonials />
+          {/* Floating WhatsApp Action Button */}
+          <WhatsAppFloat />
 
-          {/* Frequently Asked Questions */}
-          <FAQ />
+          {/* Quick Scroll to Top Floating Button */}
+          <ScrollToTop />
 
-        </main>
-
-        {/* Footer */}
-        <Footer />
-
-        {/* Cart & WhatsApp Checkout Drawer */}
-        <CartDrawer
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          cartItems={cartItems}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveItem}
-          onClearCart={handleClearCart}
-        />
-
-        {/* Discreet Admin Management Modal */}
-        <AdminPanelModal />
-
-        {/* Floating WhatsApp Action Button */}
-        <WhatsAppFloat />
-
-        {/* Quick Scroll to Top Floating Button */}
-        <ScrollToTop />
-
-      </div>
-    </AdminProvider>
+        </div>
+      </AdminProvider>
+    </ThemeProvider>
   );
 }
 
