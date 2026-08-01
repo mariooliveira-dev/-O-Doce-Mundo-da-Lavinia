@@ -76,7 +76,13 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="text-center max-w-3xl mx-auto space-y-3 mb-12"
+        >
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FFE5EC] text-[#E85D75] font-semibold text-xs uppercase tracking-wider">
             <Cake className="w-3.5 h-3.5" /> Bolos Caseirinhos • Sabor que Lembra Casa
           </div>
@@ -86,7 +92,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
           <p className="text-base text-[#5C3A21] font-medium">
             Massas fofinhas, quentinhas e coberturas super generosas preparadas artesanalmente todos os dias!
           </p>
-        </div>
+        </motion.div>
 
         {/* Filter Controls Bar */}
         <div className="space-y-6 mb-12">

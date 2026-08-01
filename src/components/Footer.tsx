@@ -1,6 +1,6 @@
 import React from 'react';
-import { LogoBadge } from './LogoBadge';
-import { Instagram, MessageCircle, Heart, MapPin, Clock, Phone, Sparkles, Lock } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Instagram, MessageCircle, Heart, MapPin, Clock, Phone, Lock } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 
 export const Footer: React.FC = () => {
@@ -11,7 +11,13 @@ export const Footer: React.FC = () => {
   return (
     <footer id="contato" className="bg-[#3D231D] text-[#FFE5EC] pt-16 pb-8 relative overflow-hidden">
       {/* Background soft dots */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
+      >
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-white/10">
           
@@ -45,7 +51,7 @@ export const Footer: React.FC = () => {
 
             <div className="flex items-center gap-3 pt-2">
               <a
-                href="https://instagram.com/odocemundodalavinia"
+                href="https://www.instagram.com/odocemundodalavinia?igsh=eWh4eTluOXgwODhp"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2.5 rounded-full bg-white/10 hover:bg-[#E85D75] text-white transition-colors"
@@ -135,7 +141,7 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-      </div>
+      </motion.div>
     </footer>
   );
 };

@@ -252,8 +252,14 @@ export const AdminPanelModal: React.FC = () => {
                 /* LOGIN TRADICIONAL SUPABASE */
                 <div className="space-y-4">
                   <div className="text-center space-y-1.5">
-                    <div className="w-14 h-14 rounded-full bg-[#FFE5EC] text-[#E85D75] mx-auto flex items-center justify-center shadow-inner">
-                      <Lock className="w-7 h-7" />
+                    <div className="w-16 h-16 rounded-full bg-white border-2 border-[#F4ACB7] mx-auto flex items-center justify-center shadow-md overflow-hidden p-1">
+                      {siteConfig.logoUrl ? (
+                        <img src={siteConfig.logoUrl} alt="Logo Doce Mundo da Lavínia" className="w-full h-full object-contain" />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-[#FFE5EC] text-[#E85D75] flex items-center justify-center text-2xl">
+                          🧁
+                        </div>
+                      )}
                     </div>
                     <h3 className="font-display font-bold text-xl text-[#3D231D]">
                       Acesso ao Painel

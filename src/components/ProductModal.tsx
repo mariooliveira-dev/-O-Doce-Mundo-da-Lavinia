@@ -85,6 +85,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <img
             src={product.image}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />

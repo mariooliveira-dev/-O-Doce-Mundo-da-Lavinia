@@ -4,7 +4,6 @@ import { Hero } from './components/Hero';
 import { AboutLavinia } from './components/AboutLavinia';
 import { MenuSection } from './components/MenuSection';
 import { InstagramFeed } from './components/InstagramFeed';
-import { Testimonials } from './components/Testimonials';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
@@ -110,9 +109,6 @@ export default function App() {
 
             {/* Instagram Feed Section */}
             <InstagramFeed />
-
-            {/* Customer Testimonials */}
-            <Testimonials />
 
             {/* Frequently Asked Questions */}
             <FAQ />

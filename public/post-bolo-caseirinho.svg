@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <!-- Background Garden Gradient -->
+    <linearGradient id="bgGarden" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#557C3E"/>
+      <stop offset="40%" stop-color="#3B5E28"/>
+      <stop offset="100%" stop-color="#244015"/>
+    </linearGradient>
+    
+    <!-- Grass texture blur -->
+    <filter id="softBlur">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Chocolate Glaze Gradient -->
+    <linearGradient id="chocoGlaze" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4A2511"/>
+      <stop offset="40%" stop-color="#301608"/>
+      <stop offset="100%" stop-color="#1F0D04"/>
+    </linearGradient>
+
+    <!-- Gloss Highlight -->
+    <linearGradient id="gloss" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <radialGradient id="brigadeiroShine" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#6B3A1E"/>
+      <stop offset="50%" stop-color="#3D1E0B"/>
+      <stop offset="100%" stop-color="#1A0A03"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Garden Outdoor Background -->
+  <rect width="600" height="600" fill="url(#bgGarden)"/>
+  
+  <!-- Bokeh Background Dots -->
+  <circle cx="100" cy="120" r="45" fill="#7FA168" opacity="0.4" filter="url(#softBlur)"/>
+  <circle cx="480" cy="90" r="60" fill="#8CB272" opacity="0.3" filter="url(#softBlur)"/>
+  <circle cx="520" cy="450" r="70" fill="#4B6E35" opacity="0.5" filter="url(#softBlur)"/>
+  <circle cx="80" cy="500" r="50" fill="#6B9151" opacity="0.4" filter="url(#softBlur)"/>
+
+  <!-- Hand Holding Cake Tray from bottom left -->
+  <g filter="url(#shadow)">
+    <!-- Arm/Hand -->
+    <path d="M120,580 C180,510 220,440 250,420 C260,410 280,415 285,430 C270,470 200,550 150,600 Z" fill="#D89D78"/>
+    <path d="M210,500 C240,460 270,410 290,400 C298,395 310,405 305,420 C285,450 240,530 200,580 Z" fill="#C98B66"/>
+  </g>
+
+  <!-- Plastic Disposable Cake Base Tray (Black Fluted Tray) -->
+  <g filter="url(#shadow)">
+    <ellipse cx="300" cy="360" rx="230" ry="140" fill="#1A1A1A"/>
+    <ellipse cx="300" cy="355" rx="220" ry="130" fill="#2D2D2D"/>
+    <!-- Tray Fluted Edges -->
+    <ellipse cx="300" cy="350" rx="210" ry="122" fill="#141414" stroke="#404040" stroke-width="3"/>
+  </g>
+
+  <!-- Golden/Vanilla Cake Ring Body -->
+  <g filter="url(#shadow)">
+    <ellipse cx="300" cy="330" rx="180" ry="100" fill="#C68B45"/>
+    <ellipse cx="300" cy="320" rx="175" ry="95" fill="#D9A05B"/>
+  </g>
+
+  <!-- Thick Rich Chocolate Glaze Lava Dripping over Cake -->
+  <g filter="url(#shadow)">
+    <!-- Main Center Glaze Pool -->
+    <ellipse cx="300" cy="310" rx="165" ry="85" fill="url(#chocoGlaze)"/>
+
+    <!-- Dripping Chocolate Streams down the sides -->
+    <path d="M135,310 C135,350 145,390 155,395 C165,400 175,370 180,330 C185,380 200,410 210,415 C220,420 230,370 240,330 C250,380 265,425 275,430 C285,435 295,380 300,330 C305,390 320,425 330,425 C340,425 350,380 355,330 C360,370 375,405 385,405 C395,405 405,360 410,325 C415,365 430,385 440,380 C450,375 465,330 465,310 C465,230 135,230 135,310 Z" fill="url(#chocoGlaze)"/>
+
+    <!-- Glaze Shine Highlights -->
+    <ellipse cx="250" cy="280" rx="60" ry="25" fill="url(#gloss)" transform="rotate(-10, 250, 280)"/>
+    <ellipse cx="350" cy="290" rx="40" ry="15" fill="url(#gloss)" transform="rotate(10, 350, 290)"/>
+  </g>
+
+  <!-- Brigadeiro Gourmet Balls (5 arranged in center ring) -->
+  <g filter="url(#shadow)">
+    <!-- Brigadeiro 1 (Center Top) -->
+    <circle cx="300" cy="260" r="24" fill="url(#brigadeiroShine)"/>
+    <circle cx="292" cy="252" r="6" fill="#A05A2C" opacity="0.6"/>
+
+    <!-- Brigadeiro 2 (Center Left) -->
+    <circle cx="250" cy="285" r="24" fill="url(#brigadeiroShine)"/>
+    <circle cx="242" cy="277" r="6" fill="#A05A2C" opacity="0.6"/>
+
+    <!-- Brigadeiro 3 (Center Right) -->
+    <circle cx="350" cy="285" r="24" fill="url(#brigadeiroShine)"/>
+    <circle cx="342" cy="277" r="6" fill="#A05A2C" opacity="0.6"/>
+
+    <!-- Brigadeiro 4 (Bottom Left) -->
+    <circle cx="270" cy="320" r="24" fill="url(#brigadeiroShine)"/>
+    <circle cx="262" cy="312" r="6" fill="#A05A2C" opacity="0.6"/>
+
+    <!-- Brigadeiro 5 (Bottom Right) -->
+    <circle cx="330" cy="320" r="24" fill="url(#brigadeiroShine)"/>
+    <circle cx="322" cy="312" r="6" fill="#A05A2C" opacity="0.6"/>
+  </g>
+
+  <!-- Chocolate Crispies / Sprinkles around Brigadeiros -->
+  <g fill="#5C2E14">
+    <circle cx="300" cy="295" r="5"/>
+    <circle cx="290" cy="305" r="4.5"/>
+    <circle cx="310" cy="305" r="5"/>
+    <circle cx="280" cy="270" r="4"/>
+    <circle cx="320" cy="270" r="4"/>
+    <circle cx="230" cy="295" r="4.5"/>
+    <circle cx="370" cy="295" r="4.5"/>
+    <circle cx="250" cy="335" r="4"/>
+    <circle cx="350" cy="335" r="4"/>
+    <circle cx="300" cy="335" r="5"/>
+  </g>
+</svg>

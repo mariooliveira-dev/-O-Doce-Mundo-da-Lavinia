@@ -1,6 +1,7 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { LogoBadge } from './LogoBadge';
-import { Sparkles, Heart, Cake, ArrowRight, Star, MapPin } from 'lucide-react';
+import { Sparkles, Heart, Cake, ArrowRight, MapPin } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 
 interface HeroProps {
@@ -31,7 +32,12 @@ export const Hero: React.FC<HeroProps> = ({ onScrollToMenu }) => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* Left Column: Text & Call to Action */}
-          <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6"
+          >
             
             {/* Top pill tag */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-[#F4ACB7] shadow-xs text-xs sm:text-sm font-semibold text-[#E85D75]">
@@ -69,17 +75,22 @@ export const Hero: React.FC<HeroProps> = ({ onScrollToMenu }) => {
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto pt-4">
               <button
                 onClick={onScrollToMenu}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#E85D75] hover:bg-[#D84B65] text-white font-bold text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#E85D75] hover:bg-[#D84B65] text-white font-bold text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 group cursor-pointer"
               >
                 <span>Ver Cardápio de Bolos</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
 
-          </div>
+          </motion.div>
 
           {/* Right Column: Featured Logo Badge Visual */}
-          <div className="lg:col-span-6 flex items-center justify-center relative">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
+            className="lg:col-span-6 flex items-center justify-center relative"
+          >
             
             {/* Glowing background halo */}
             <div className="absolute w-80 h-80 bg-[#FFCAD4] rounded-full blur-3xl opacity-50 -z-10" />
@@ -100,7 +111,7 @@ export const Hero: React.FC<HeroProps> = ({ onScrollToMenu }) => {
               </div>
             </div>
 
-          </div>
+          </motion.div>
 
         </div>
       </div>

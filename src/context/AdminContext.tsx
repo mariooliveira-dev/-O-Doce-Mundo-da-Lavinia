@@ -158,13 +158,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(siteConfig));
   }, [siteConfig]);
 
-  // Sincroniza dynamic Open Graph e Twitter Card meta tags com a logo oficial do site
+  // Sincroniza dynamic Open Graph, Twitter Card e Favicon com a logo oficial do site
   useEffect(() => {
     const rawLogo = siteConfig.logoUrl ? siteConfig.logoUrl.trim() : '';
     let logoImageToUse = rawLogo || '/logo-og.svg';
+    let faviconToUse = rawLogo || '/favicon.svg';
 
     if (logoImageToUse.startsWith('/') && typeof window !== 'undefined') {
       logoImageToUse = window.location.origin + logoImageToUse;
+    }
+    if (faviconToUse.startsWith('/') && typeof window !== 'undefined') {
+      faviconToUse = window.location.origin + faviconToUse;
     }
 
     const setMetaTag = (selector: string, attr: string, value: string) => {
@@ -181,6 +185,21 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setMetaTag('meta[property="og:image"]', 'content', logoImageToUse);
     setMetaTag('meta[name="twitter:image"]', 'content', logoImageToUse);
+
+    // Atualiza links de favicon dinamicamente
+    const setLinkTag = (rel: string, id: string, hrefVal: string) => {
+      let link: HTMLLinkElement | null = document.querySelector(`link#${id}`);
+      if (!link) {
+        link = document.createElement('link');
+        link.id = id;
+        link.rel = rel;
+        document.head.appendChild(link);
+      }
+      link.href = hrefVal;
+    };
+
+    setLinkTag('icon', 'dynamic-favicon', faviconToUse);
+    setLinkTag('apple-touch-icon', 'dynamic-apple-icon', faviconToUse);
   }, [siteConfig.logoUrl]);
 
   useEffect(() => {
