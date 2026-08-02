@@ -119,12 +119,12 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
     setIsAdded(true);
     const kitProduct: Product = {
       id: `custom-kit-${Date.now()}`,
-      name: `Kit Festa Personalizado da Lavínia`,
+      name: `Bolo Personalizado da Lavínia`,
       category: 'vulcao',
       description: `${selectedCake.name} + ${docinhosCount} Docinhos + ${cupcakesCount} Cupcakes`,
       price: totalPrice,
       image: 'https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=800&q=80',
-      badge: 'Kit Exclusivo ✨',
+      badge: 'Bolo Especial ✨',
       rating: 5.0,
       reviewCount: 1,
     };
@@ -147,7 +147,7 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
   };
 
   const handleDirectWhatsAppKit = () => {
-    let msg = `Olá ${siteConfig.founderName?.split(' ')[0] || 'Lavínia'}! Montei um *Kit Festa Personalizado* no seu site e gostaria de encomendar:\n\n`;
+    let msg = `Olá ${siteConfig.founderName?.split(' ')[0] || 'Lavínia'}! Montei um *Bolo Personalizado* no seu site e gostaria de encomendar:\n\n`;
     msg += `🎂 *Bolo Escolhido:* ${selectedCake.name}\n`;
     msg += `🍬 *Docinhos (${docinhosCount} un):* ${selectedDocinhosFlavors.join(', ')}\n`;
     if (cupcakesCount > 0) {
@@ -383,7 +383,7 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
         {/* Footer Actions & Price Bar */}
         <div className="p-6 bg-[#FFF0F3] border-t border-[#FFE5EC] sticky bottom-0 z-10 flex items-center justify-between gap-4">
           <div>
-            <span className="text-2xs text-[#5C3A21] block">Total do Kit</span>
+            <span className="text-2xs text-[#5C3A21] block">Total do Bolo</span>
             <span className="font-display font-bold text-2xl text-[#3D231D]">
               R$ {totalPrice.toFixed(2).replace('.', ',')}
             </span>
@@ -424,12 +424,12 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
                   {isAdded ? (
                     <div className="flex items-center gap-1.5 animate-in zoom-in-75 duration-200">
                       <Check className="w-4 h-4 stroke-[2.5]" />
-                      <span>Kit Adicionado ao Carrinho!</span>
+                      <span>Bolo Adicionado ao Carrinho!</span>
                     </div>
                   ) : (
                     <>
                       <ShoppingBag className="w-4 h-4" />
-                      <span>Adicionar Kit ao Carrinho</span>
+                      <span>Adicionar Bolo ao Carrinho</span>
                     </>
                   )}
                 </button>

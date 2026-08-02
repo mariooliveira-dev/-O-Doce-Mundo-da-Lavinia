@@ -144,6 +144,52 @@ export const PRODUCTS: Product[] = [
     badge: 'Puro Coco 🥥',
     rating: 4.9,
     reviewCount: 31
+  },
+
+  // --- CATEGORIA 4: BOLOS TRADICIONAIS (tradicionais) ---
+  {
+    id: 'bolo-tradicional-fuba-simples',
+    name: 'Bolo Tradicional de Fubá',
+    category: 'tradicionais',
+    description: 'Massa tradicional fofinha e dourada de fubá artesanal, crocante por fora e macia por dentro. Perfeita com café fresquinho!',
+    price: 28.00,
+    image: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=800&q=80',
+    badge: 'Receita da Vó ☕',
+    rating: 5.0,
+    reviewCount: 35
+  },
+  {
+    id: 'bolo-tradicional-mesclado',
+    name: 'Bolo Tradicional Mesclado',
+    category: 'tradicionais',
+    description: 'A combinação clássica de baunilha suave e cacau puro mesclados em uma massa leve, fofinha e muito saborosa.',
+    price: 30.00,
+    image: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=800&q=80',
+    badge: 'Fofinho & Leve ✨',
+    rating: 4.9,
+    reviewCount: 28
+  },
+  {
+    id: 'bolo-tradicional-milho-verde',
+    name: 'Bolo Tradicional de Milho Verde',
+    category: 'tradicionais',
+    description: 'Feito com milho selecionado e leite de coco, com textura cremosa incomparável e aroma irresistível.',
+    price: 32.00,
+    image: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=800&q=80',
+    badge: 'Milho Selecionado 🌽',
+    rating: 5.0,
+    reviewCount: 42
+  },
+  {
+    id: 'bolo-tradicional-chocolate-simples',
+    name: 'Bolo Tradicional de Chocolate Caseiro',
+    category: 'tradicionais',
+    description: 'Bolo fofinho de chocolate com massa caseira super macia. O preferido das crianças e de toda a família!',
+    price: 30.00,
+    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80',
+    badge: 'Super Fofinho 🍫',
+    rating: 4.8,
+    reviewCount: 31
   }
 ];
 

@@ -1,4 +1,4 @@
-export type ProductCategory = 'todos' | 'vulcao' | 'com_cobertura' | 'piscina';
+export type ProductCategory = 'todos' | 'vulcao' | 'com_cobertura' | 'piscina' | 'tradicionais';
 
 export interface Product {
   id: string;
