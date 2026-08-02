@@ -23,7 +23,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
     { id: 'todos', label: 'Todos os Bolos', icon: '🥮' },
     { id: 'vulcao', label: 'Bolo Vulcão', icon: '🌋' },
     { id: 'com_cobertura', label: 'Bolo Com Cobertura', icon: '🍰' },
-    { id: 'piscina', label: 'O Bolo Piscina', icon: '🏊‍♀️' },
+    { id: 'piscina', label: 'Bolo Piscina', icon: '🍰' },
     { id: 'tradicionais', label: 'Bolos Tradicionais', icon: '🧁' },
   ];
 
