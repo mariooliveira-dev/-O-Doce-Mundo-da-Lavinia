@@ -15,22 +15,7 @@ export const configService = {
       ? { ...DEFAULT_SITE_CONFIG, ...savedConfig }
       : DEFAULT_SITE_CONFIG;
 
-    // 1. Tenta buscar no servidor Express central (sincronizado em todos os navegadores)
-    try {
-      const res = await fetch('/api/config');
-      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          const serverConfig = { ...DEFAULT_SITE_CONFIG, ...json.data };
-          saveConfigToStorage(serverConfig);
-          return serverConfig;
-        }
-      }
-    } catch (err) {
-      console.warn('API /api/config indisponível, tentando Supabase/localStorage...');
-    }
-
-    // 2. Se Supabase estiver configurado, busca do Supabase
+    // 1. Se Supabase estiver configurado, busca do Supabase primeiro
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
@@ -73,18 +58,7 @@ export const configService = {
     // Guarda backup em localStorage para refletir imediatamente
     saveConfigToStorage(config);
 
-    // 1. Salva no servidor Express central
-    try {
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
-    } catch (err) {
-      console.warn('Falha ao enviar /api/config:', err);
-    }
-
-    // 2. Salva no Supabase se configurado
+    // Salva no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const payload: DbSiteConfig = {

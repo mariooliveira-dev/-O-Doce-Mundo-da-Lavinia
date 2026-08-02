@@ -51,6 +51,7 @@ export const AdminPanelModal: React.FC = () => {
     deleteProduct,
     uploadImage,
     resetToDefaults,
+    importBackup,
   } = useAdmin();
 
   // Auth Screen Mode ('login', 'forgot')
@@ -121,14 +122,11 @@ export const AdminPanelModal: React.FC = () => {
     reader.onload = async (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
-        if (json.siteConfig) {
-          await updateSiteConfig(json.siteConfig);
-        }
-        if (json.products && Array.isArray(json.products)) {
-          await productService.saveAllProducts(json.products);
-          window.location.reload();
+        const res = await importBackup(json);
+        if (res.success) {
+          alert('🎉 Backup importado com sucesso! Seus produtos e configurações foram salvos no site.');
         } else {
-          alert('Backup importado com sucesso!');
+          alert(res.error || 'Erro ao importar backup.');
         }
       } catch {
         alert('Formato de arquivo de backup inválido.');

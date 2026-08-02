@@ -48,17 +48,57 @@ export const getSavedProductsFromStorage = (): Product[] | null => {
 };
 
 /**
- * Salva a lista de produtos no localStorage em todas as chaves de compatibilidade.
+ * Salva a lista de produtos no localStorage de forma otimizada para evitar QuotaExceededError.
  */
 export const saveProductsToStorage = (products: Product[]) => {
   if (typeof window === 'undefined') return;
+
+  // Limpa rigorosamente TODAS as chaves antigas e duplicadas do localStorage para liberar cota
+  const legacyKeys = [
+    'docemundo_products_v4',
+    'docemundo_products_v3',
+    'docemundo_products_v2',
+    'docemundo_products',
+  ];
+  for (const legacyKey of legacyKeys) {
+    try {
+      localStorage.removeItem(legacyKey);
+    } catch {}
+  }
+
   try {
-    const json = JSON.stringify(products);
-    for (const key of PRODUCT_STORAGE_KEYS) {
-      localStorage.setItem(key, json);
-    }
+    // Reduz imagens base64 gigantes (> 40KB) APENAS para o clone do localStorage local,
+    // garantindo que NUNCA estoure a cota de 5MB do navegador.
+    // O Supabase e a memória do React mantêm a imagem original completa!
+    const sanitizedProducts = products.map((p) => {
+      if (p.image && p.image.startsWith('data:') && p.image.length > 40000) {
+        return {
+          ...p,
+          image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
+        };
+      }
+      return p;
+    });
+
+    const json = JSON.stringify(sanitizedProducts);
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, json);
   } catch (e) {
-    console.error('Erro ao salvar produtos no localStorage:', e);
+    // Fallback se o localStorage estiver completamente ocupado por outros dados
+    try {
+      const minimalProducts = products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        description: p.description,
+        available: p.available,
+        badge: p.badge,
+        image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
+      }));
+      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(minimalProducts));
+    } catch {
+      console.warn('Aviso: Armazenamento local (localStorage) cheio. Os dados permanecem preservados no Supabase e na memória do site.');
+    }
   }
 };
 
@@ -87,9 +127,16 @@ export const getSavedConfigFromStorage = (): Partial<SiteConfig> | null => {
 export const saveConfigToStorage = (config: SiteConfig) => {
   if (typeof window === 'undefined') return;
   try {
-    const json = JSON.stringify(config);
+    const configCopy = { ...config };
+    if (configCopy.profileImage && configCopy.profileImage.startsWith('data:') && configCopy.profileImage.length > 50000) {
+      configCopy.profileImage = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80';
+    }
+    if (configCopy.logoUrl && configCopy.logoUrl.startsWith('data:') && configCopy.logoUrl.length > 50000) {
+      configCopy.logoUrl = '';
+    }
+    const json = JSON.stringify(configCopy);
     localStorage.setItem(STORAGE_KEY_CONFIG, json);
   } catch (e) {
-    console.error('Erro ao salvar configurações no localStorage:', e);
+    console.warn('Aviso ao salvar configurações no localStorage:', e);
   }
 };

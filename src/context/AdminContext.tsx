@@ -61,6 +61,7 @@ interface AdminContextType {
   deleteProduct: (id: string) => Promise<void>;
   uploadImage: (file: File) => Promise<string | null>;
   resetToDefaults: () => void;
+  importBackup: (data: { siteConfig?: Partial<SiteConfig>; products?: Product[] }) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -297,6 +298,24 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return url;
   };
 
+  const importBackup = async (data: { siteConfig?: Partial<SiteConfig>; products?: Product[] }) => {
+    try {
+      if (data.siteConfig) {
+        const mergedConfig = { ...siteConfig, ...data.siteConfig };
+        setSiteConfig(mergedConfig);
+        await configService.updateSiteConfig(mergedConfig);
+      }
+      if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+        setProducts(data.products);
+        await productService.saveAllProducts(data.products);
+      }
+      return { success: true };
+    } catch (err) {
+      console.error('Erro ao importar backup no AdminContext:', err);
+      return { success: false, error: 'Falha ao processar os dados do arquivo de backup.' };
+    }
+  };
+
   const resetToDefaults = async () => {
     if (window.confirm('Tem certeza que deseja restaurar as fotos, textos e preços originais do site?')) {
       setSiteConfig(DEFAULT_SITE_CONFIG);
@@ -338,6 +357,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteProduct,
         uploadImage,
         resetToDefaults,
+        importBackup,
       }}
     >
       {children}

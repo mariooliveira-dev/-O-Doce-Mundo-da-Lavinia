@@ -11,21 +11,7 @@ export const productService = {
   async fetchProducts(): Promise<Product[]> {
     const savedLocal = getSavedProductsFromStorage();
 
-    // 1. Tenta buscar no servidor Express central (compartilhado entre todos os navegadores)
-    try {
-      const res = await fetch('/api/products');
-      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          saveProductsToStorage(json.data);
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API /api/products indisponível, tentando Supabase/localStorage...');
-    }
-
-    // 2. Tenta buscar no Supabase se configurado
+    // 1. Tenta buscar no Supabase se configurado (prioridade máxima para Vercel)
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
@@ -51,19 +37,9 @@ export const productService = {
           }));
 
           saveProductsToStorage(remoteProducts);
-
-          // Tenta salvar de volta no servidor local para manter em sincronia
-          try {
-            fetch('/api/products', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(remoteProducts),
-            });
-          } catch {}
-
           return remoteProducts;
         } else if (!error && data && data.length === 0 && savedLocal && savedLocal.length > 0) {
-          // Se o Supabase estiver limpo, envia os produtos atuais locais para preenchê-lo pela primeira vez
+          // Se a tabela do Supabase estiver vazia, preenche com os produtos locais
           await this.saveAllProducts(savedLocal);
         }
       } catch (err) {
@@ -71,6 +47,7 @@ export const productService = {
       }
     }
 
+    // 2. Se não estiver no Supabase e for ambiente container local (não Vercel/estático)
     return savedLocal || PRODUCTS;
   },
 
@@ -87,18 +64,7 @@ export const productService = {
       available: newProd.available !== false,
     };
 
-    // 1. Envia para o servidor central Express
-    try {
-      await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product),
-      });
-    } catch (err) {
-      console.warn('Falha ao enviar produto para /api/products:', err);
-    }
-
-    // 2. Se Supabase estiver configurado, salva no Supabase
+    // Se Supabase estiver configurado, salva no Supabase
     if (isSupabaseConfigured && supabase) {
       try {
         const dbPayload: DbProduct = {
@@ -130,18 +96,7 @@ export const productService = {
    * Atualiza dados de um produto existente no Servidor, Supabase e localStorage
    */
   async updateProduct(id: string, updated: Partial<Product>): Promise<boolean> {
-    // 1. Atualiza no servidor central Express
-    try {
-      await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      });
-    } catch (err) {
-      console.warn('Falha ao atualizar no servidor Express:', err);
-    }
-
-    // 2. Se Supabase estiver configurado, atualiza/upsert no Supabase
+    // Se Supabase estiver configurado, atualiza/upsert no Supabase
     if (isSupabaseConfigured && supabase) {
       try {
         const dbPayload: Partial<DbProduct> = { id };
@@ -169,16 +124,7 @@ export const productService = {
    * Remove um produto pelo ID no Servidor e Supabase
    */
   async deleteProduct(id: string): Promise<boolean> {
-    // 1. Deleta no servidor central Express
-    try {
-      await fetch(`/api/products/${id}`, {
-        method: 'DELETE',
-      });
-    } catch (err) {
-      console.warn('Falha ao deletar produto no servidor Express:', err);
-    }
-
-    // 2. Deleta no Supabase se configurado
+    // Deleta no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         await (supabase.from('produtos') as any)
@@ -197,15 +143,6 @@ export const productService = {
    */
   async saveAllProducts(products: Product[]): Promise<boolean> {
     saveProductsToStorage(products);
-    try {
-      await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(products),
-      });
-    } catch (err) {
-      console.warn('Erro ao salvar lote de produtos no servidor:', err);
-    }
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -238,17 +175,29 @@ export const productService = {
    * Restaura os produtos para a lista padrão no servidor
    */
   async resetProducts(): Promise<Product[]> {
-    try {
-      const res = await fetch('/api/products/reset', { method: 'POST' });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          saveProductsToStorage(json.data);
-          return json.data;
-        }
+    saveProductsToStorage(PRODUCTS);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const dbPayloads: DbProduct[] = PRODUCTS.map((product) => ({
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          description: product.description,
+          price: product.price,
+          image: product.image,
+          badge: product.badge || null,
+          rating: product.rating || 5.0,
+          review_count: product.reviewCount || 1,
+          customizable: Boolean(product.customizable),
+          available: product.available !== false,
+          options: product.options || null,
+        }));
+
+        await (supabase.from('produtos') as any)
+          .upsert(dbPayloads, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Erro ao resetar produtos no Supabase:', err);
       }
-    } catch (err) {
-      console.warn('Erro ao resetar produtos no servidor:', err);
     }
     return PRODUCTS;
   },
