@@ -86,13 +86,6 @@ export const getSavedConfigFromStorage = (): Partial<SiteConfig> | null => {
  */
 export const saveConfigToStorage = (config: SiteConfig) => {
   if (typeof window === 'undefined') return;
-  const configCopy = { ...config };
-  if (configCopy.profileImage && configCopy.profileImage.startsWith('data:') && configCopy.profileImage.length > 50000) {
-    configCopy.profileImage = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80';
-  }
-  if (configCopy.logoUrl && configCopy.logoUrl.startsWith('data:') && configCopy.logoUrl.length > 50000) {
-    configCopy.logoUrl = '';
-  }
-  safeSetLocalCache(STORAGE_KEY_CONFIG, configCopy);
+  safeSetLocalCache(STORAGE_KEY_CONFIG, config);
 };
 

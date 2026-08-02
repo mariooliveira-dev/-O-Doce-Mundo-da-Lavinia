@@ -31,21 +31,11 @@ export const purgeObsoleteLocalCache = () => {
 };
 
 /**
- * Sanitiza o payload para o localStorage, substituindo base64 muito grandes por um fallback leve.
- * O dado original permanece 100% completo e com qualidade maxima no Supabase e na memória do React Query.
+ * Mantém os produtos intactos com suas fotos originais.
+ * Com a compressão Canvas ativada, as fotos do usuário são leves (~40KB-80KB) e não estouram o localStorage.
  */
 export const sanitizeProductsForLocalCache = (products: Product[]): Product[] => {
-  return products.map((p) => {
-    let img = p.image;
-    // Se a imagem for uma string base64 pesada (> 30KB)
-    if (img && img.startsWith('data:') && img.length > 30000) {
-      img = 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80';
-    }
-    return {
-      ...p,
-      image: img,
-    };
-  });
+  return products;
 };
 
 /**

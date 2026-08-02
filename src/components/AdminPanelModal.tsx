@@ -28,12 +28,14 @@ import {
   Download,
   UploadCloud,
   Info,
+  RefreshCw,
 } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import { ProductCategory, Product } from '../types';
 import { authService } from '../services/authService';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { productService } from '../services/productService';
+import { syncBackupWithSupabase } from '../utils/syncBackupUtility';
 
 export const AdminPanelModal: React.FC = () => {
   const {
@@ -98,6 +100,22 @@ export const AdminPanelModal: React.FC = () => {
 
   // Cloud Sync & Vercel Tutorial State
   const [showVercelTutorial, setShowVercelTutorial] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
+
+  const handleSyncNow = async () => {
+    setIsSyncing(true);
+    setSyncStatusMsg(null);
+    const result = await syncBackupWithSupabase();
+    setIsSyncing(false);
+    if (result.success) {
+      setSyncStatusMsg(`Sincronizado com sucesso! (${result.syncedProductsCount} produto(s) atualizados)`);
+      setTimeout(() => setSyncStatusMsg(null), 5000);
+    } else {
+      setSyncStatusMsg(`Falha na sincronização: ${result.message}`);
+      setTimeout(() => setSyncStatusMsg(null), 6000);
+    }
+  };
 
   const handleExportBackup = () => {
     const backupData = {
@@ -581,8 +599,18 @@ export const AdminPanelModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Export / Import & Tutorial Buttons */}
-                  <div className="flex items-center gap-2 shrink-0 ml-auto">
+                  {/* Export / Import, Sync & Tutorial Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 shrink-0 ml-auto">
+                    <button
+                      onClick={handleSyncNow}
+                      disabled={isSyncing}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-2xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      title="Forçar verificação de versão e sincronização imediata com o Supabase"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Agora'}</span>
+                    </button>
+
                     <button
                       onClick={handleExportBackup}
                       className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 text-gray-800 font-bold text-2xs border border-gray-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
@@ -601,7 +629,7 @@ export const AdminPanelModal: React.FC = () => {
                     {!isSupabaseConfigured && (
                       <button
                         onClick={() => setShowVercelTutorial(!showVercelTutorial)}
-                        className="px-3 py-1.5 rounded-lg bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-2xs shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-2xs shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
                       >
                         <Info className="w-3.5 h-3.5" />
                         <span>{showVercelTutorial ? 'Ocultar Ajuda' : 'Sincronizar no Vercel'}</span>
@@ -609,6 +637,17 @@ export const AdminPanelModal: React.FC = () => {
                     )}
                   </div>
                 </div>
+
+                {syncStatusMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-2.5 rounded-xl bg-white/90 border border-emerald-300 text-emerald-950 text-2xs font-bold shadow-2xs flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>{syncStatusMsg}</span>
+                  </motion.div>
+                )}
 
                 {/* Vercel Tutorial Expandable Block */}
                 {showVercelTutorial && !isSupabaseConfigured && (
