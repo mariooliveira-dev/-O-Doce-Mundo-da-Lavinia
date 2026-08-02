@@ -21,10 +21,9 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
 
   const categories: { id: ProductCategory; label: string; icon: string }[] = [
     { id: 'todos', label: 'Todos os Bolos', icon: '🥮' },
-    { id: 'caseirinhos', label: 'Caseirinhos Clássicos', icon: '🍰' },
-    { id: 'vulcao', label: 'Bolos Vulcão', icon: '🌋' },
-    { id: 'fofinhos', label: 'Bolos Fofinhos', icon: '✨' },
-    { id: 'mini_caseiros', label: 'Mini Caseirinhos', icon: '🧁' },
+    { id: 'vulcao', label: 'Bolo Vulcão', icon: '🌋' },
+    { id: 'com_cobertura', label: 'Bolo COM Cobertura', icon: '🍰' },
+    { id: 'piscina', label: 'O Bolo Piscina', icon: '🏊‍♀️' },
   ];
 
   const filteredProducts = useMemo(() => {

@@ -116,7 +116,7 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
     const kitProduct: Product = {
       id: `custom-kit-${Date.now()}`,
       name: `Kit Festa Personalizado da Lavínia`,
-      category: 'kits',
+      category: 'vulcao',
       description: `${selectedCake.name} + ${docinhosCount} Docinhos + ${cupcakesCount} Cupcakes`,
       price: totalPrice,
       image: 'https://images.unsplash.com/photo-1519869325930-281384150729?auto=format&fit=crop&w=800&q=80',

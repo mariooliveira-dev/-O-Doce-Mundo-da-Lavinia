@@ -40,9 +40,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.totalPrice, 0);
-  const discount = customer.paymentMethod === 'pix' ? subtotal * 0.05 : 0;
   const deliveryFee = customer.deliveryType === 'entrega' ? 12.00 : 0;
-  const finalTotal = subtotal - discount + deliveryFee;
+  const finalTotal = subtotal + deliveryFee;
 
   const handleSendWhatsAppOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,9 +71,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       if (item.extraNotes) message += `   • Obs: ${item.extraNotes}\n`;
     });
 
-    message += `\n💳 *Forma de Pagamento Pretendida:* ${customer.paymentMethod.toUpperCase()} ${customer.paymentMethod === 'pix' ? '(Com 5% OFF)' : ''}\n`;
+    message += `\n💳 *Forma de Pagamento Pretendida:* ${customer.paymentMethod.toUpperCase()}\n`;
     message += `💰 *Subtotal:* R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
-    if (discount > 0) message += `🏷️ *Desconto Pix (5%):* -R$ ${discount.toFixed(2).replace('.', ',')}\n`;
     if (deliveryFee > 0) message += `🚚 *Taxa Entrega:* R$ ${deliveryFee.toFixed(2).replace('.', ',')}\n`;
     message += `✨ *VALOR ESTIMADO:* R$ ${finalTotal.toFixed(2).replace('.', ',')}\n`;
 
@@ -307,7 +305,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: 'pix', label: 'Pix 5% OFF' },
+                      { id: 'pix', label: 'Pix' },
                       { id: 'cartao', label: 'Cartão' },
                       { id: 'dinheiro', label: 'Dinheiro' },
                     ].map((m) => (
@@ -344,12 +342,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <span>Subtotal:</span>
                   <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
-                {discount > 0 && (
-                  <div className="flex justify-between text-[#2E7D32] font-semibold">
-                    <span>Desconto Pix (5%):</span>
-                    <span>-R$ {discount.toFixed(2).replace('.', ',')}</span>
-                  </div>
-                )}
                 {deliveryFee > 0 && (
                   <div className="flex justify-between text-[#5C3A21]">
                     <span>Taxa de Entrega:</span>

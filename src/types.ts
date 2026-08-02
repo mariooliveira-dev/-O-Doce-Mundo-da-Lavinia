@@ -1,4 +1,4 @@
-export type ProductCategory = 'todos' | 'caseirinhos' | 'vulcao' | 'fofinhos' | 'mini_caseiros' | 'bolos' | 'cupcakes' | 'docinhos' | 'copos' | 'kits';
+export type ProductCategory = 'todos' | 'vulcao' | 'com_cobertura' | 'piscina';
 
 export interface Product {
   id: string;

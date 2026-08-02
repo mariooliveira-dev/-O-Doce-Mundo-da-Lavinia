@@ -71,7 +71,7 @@ export const AdminPanelModal: React.FC = () => {
   // New product modal state inside admin panel
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [newProdName, setNewProdName] = useState('');
-  const [newProdCategory, setNewProdCategory] = useState<ProductCategory>('bolos');
+  const [newProdCategory, setNewProdCategory] = useState<ProductCategory>('vulcao');
   const [newProdPrice, setNewProdPrice] = useState('');
   const [newProdDescription, setNewProdDescription] = useState('');
   const [newProdImage, setNewProdImage] = useState('');
@@ -559,11 +559,9 @@ export const AdminPanelModal: React.FC = () => {
                             onChange={(e) => setNewProdCategory(e.target.value as ProductCategory)}
                             className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7]"
                           >
-                            <option value="bolos">Bolos & Bentô</option>
-                            <option value="cupcakes">Cupcakes</option>
-                            <option value="docinhos">Docinhos de Festa</option>
-                            <option value="copos">Copos da Felicidade</option>
-                            <option value="kits">Kits Festa</option>
+                            <option value="vulcao">Bolo Vulcão 🌋</option>
+                            <option value="com_cobertura">Bolo com Cobertura 🍰</option>
+                            <option value="piscina">O Bolo Piscina 🏊‍♀️</option>
                           </select>
                         </div>
 

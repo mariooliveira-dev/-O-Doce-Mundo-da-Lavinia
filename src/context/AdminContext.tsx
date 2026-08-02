@@ -59,7 +59,7 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 const STORAGE_KEY_CONFIG = 'docemundo_site_config_v1';
-const STORAGE_KEY_PRODUCTS = 'docemundo_products_v1';
+const STORAGE_KEY_PRODUCTS = 'docemundo_products_v3';
 const STORAGE_KEY_AUTH = 'docemundo_admin_auth_v1';
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
