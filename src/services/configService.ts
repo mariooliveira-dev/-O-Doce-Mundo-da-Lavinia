@@ -7,7 +7,7 @@ const CONFIG_ROW_ID = 'main_config';
 
 export const configService = {
   /**
-   * Busca as configurações gerais do site no Supabase (com fallback local)
+   * Busca as configurações gerais do site no Servidor/Supabase (com fallback local)
    */
   async fetchSiteConfig(): Promise<SiteConfig> {
     const savedConfig = getSavedConfigFromStorage();
@@ -15,84 +15,100 @@ export const configService = {
       ? { ...DEFAULT_SITE_CONFIG, ...savedConfig }
       : DEFAULT_SITE_CONFIG;
 
-    if (!isSupabaseConfigured || !supabase) {
-      return localMergedConfig;
-    }
-
+    // 1. Tenta buscar no servidor Express central (sincronizado em todos os navegadores)
     try {
-      const { data, error } = await supabase
-        .from('configuracoes')
-        .select('*')
-        .eq('id', CONFIG_ROW_ID)
-        .single();
-
-      if (error || !data) {
-        console.warn('Configurações não encontradas no Supabase, usando padrão local.');
-        return localMergedConfig;
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const serverConfig = { ...DEFAULT_SITE_CONFIG, ...json.data };
+          saveConfigToStorage(serverConfig);
+          return serverConfig;
+        }
       }
-
-      const row = data as unknown as DbSiteConfig;
-      const remoteConfig: SiteConfig = {
-        phoneDisplay: row.phone_display || DEFAULT_SITE_CONFIG.phoneDisplay,
-        phoneRaw: row.phone_raw || DEFAULT_SITE_CONFIG.phoneRaw,
-        profileImage: row.profile_image || DEFAULT_SITE_CONFIG.profileImage,
-        profileBio1: row.profile_bio_1 || DEFAULT_SITE_CONFIG.profileBio1,
-        profileBio2: row.profile_bio_2 || DEFAULT_SITE_CONFIG.profileBio2,
-        profileBio3: row.profile_bio_3 || DEFAULT_SITE_CONFIG.profileBio3,
-        founderName: row.founder_name || DEFAULT_SITE_CONFIG.founderName,
-        founderTitle: row.founder_title || DEFAULT_SITE_CONFIG.founderTitle,
-        logoUrl: row.logo_url ?? DEFAULT_SITE_CONFIG.logoUrl,
-        logoSlogan: row.logo_slogan || DEFAULT_SITE_CONFIG.logoSlogan,
-        adminPassword: DEFAULT_SITE_CONFIG.adminPassword,
-      };
-
-      saveConfigToStorage(remoteConfig);
-      return remoteConfig;
     } catch (err) {
-      console.error('Erro ao buscar configurações no Supabase:', err);
-      return localMergedConfig;
+      console.warn('API /api/config indisponível, tentando Supabase/localStorage...');
     }
+
+    // 2. Se Supabase estiver configurado, busca do Supabase
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('configuracoes')
+          .select('*')
+          .eq('id', CONFIG_ROW_ID)
+          .single();
+
+        if (!error && data) {
+          const row = data as unknown as DbSiteConfig;
+          const remoteConfig: SiteConfig = {
+            phoneDisplay: row.phone_display || DEFAULT_SITE_CONFIG.phoneDisplay,
+            phoneRaw: row.phone_raw || DEFAULT_SITE_CONFIG.phoneRaw,
+            profileImage: row.profile_image || DEFAULT_SITE_CONFIG.profileImage,
+            profileBio1: row.profile_bio_1 || DEFAULT_SITE_CONFIG.profileBio1,
+            profileBio2: row.profile_bio_2 || DEFAULT_SITE_CONFIG.profileBio2,
+            profileBio3: row.profile_bio_3 || DEFAULT_SITE_CONFIG.profileBio3,
+            founderName: row.founder_name || DEFAULT_SITE_CONFIG.founderName,
+            founderTitle: row.founder_title || DEFAULT_SITE_CONFIG.founderTitle,
+            logoUrl: row.logo_url ?? DEFAULT_SITE_CONFIG.logoUrl,
+            logoSlogan: row.logo_slogan || DEFAULT_SITE_CONFIG.logoSlogan,
+            adminPassword: DEFAULT_SITE_CONFIG.adminPassword,
+          };
+
+          saveConfigToStorage(remoteConfig);
+          return remoteConfig;
+        }
+      } catch (err) {
+        console.error('Erro ao buscar configurações no Supabase:', err);
+      }
+    }
+
+    return localMergedConfig;
   },
 
   /**
-   * Salva ou atualiza as configurações do site no Supabase e no localStorage
+   * Salva ou atualiza as configurações do site no Servidor, Supabase e localStorage
    */
   async updateSiteConfig(config: SiteConfig): Promise<boolean> {
-    // Guarda backup em localStorage para garantir que as alterações reflitam imediatamente na UI
+    // Guarda backup em localStorage para refletir imediatamente
     saveConfigToStorage(config);
 
-    if (!isSupabaseConfigured || !supabase) {
-      return true;
-    }
-
+    // 1. Salva no servidor Express central
     try {
-      const payload: DbSiteConfig = {
-        id: CONFIG_ROW_ID,
-        phone_display: config.phoneDisplay,
-        phone_raw: config.phoneRaw,
-        profile_image: config.profileImage,
-        profile_bio_1: config.profileBio1,
-        profile_bio_2: config.profileBio2,
-        profile_bio_3: config.profileBio3,
-        founder_name: config.founderName,
-        founder_title: config.founderTitle,
-        logo_url: config.logoUrl,
-        logo_slogan: config.logoSlogan,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await (supabase.from('configuracoes') as any)
-        .upsert(payload, { onConflict: 'id' });
-
-      if (error) {
-        console.warn('Supabase RLS ou aviso ao atualizar configuracoes (salvo localmente):', error.message);
-        return true;
-      }
-
-      return true;
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
     } catch (err) {
-      console.warn('Falha na requisição de configuracoes no Supabase (salvo localmente):', err);
-      return true;
+      console.warn('Falha ao enviar /api/config:', err);
     }
+
+    // 2. Salva no Supabase se configurado
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const payload: DbSiteConfig = {
+          id: CONFIG_ROW_ID,
+          phone_display: config.phoneDisplay,
+          phone_raw: config.phoneRaw,
+          profile_image: config.profileImage,
+          profile_bio_1: config.profileBio1,
+          profile_bio_2: config.profileBio2,
+          profile_bio_3: config.profileBio3,
+          founder_name: config.founderName,
+          founder_title: config.founderTitle,
+          logo_url: config.logoUrl,
+          logo_slogan: config.logoSlogan,
+          updated_at: new Date().toISOString(),
+        };
+
+        await (supabase.from('configuracoes') as any)
+          .upsert(payload, { onConflict: 'id' });
+      } catch (err) {
+        console.warn('Falha ao atualizar configuracoes no Supabase:', err);
+      }
+    }
+
+    return true;
   },
 };

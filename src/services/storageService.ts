@@ -2,57 +2,65 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export const storageService = {
   /**
-   * Realiza upload de uma imagem para o Supabase Storage (Bucket 'images')
+   * Realiza upload de uma imagem para o Servidor Express ou Supabase Storage
    */
   async uploadImage(file: File, bucket = 'images', folder = 'uploads'): Promise<{ url: string | null; error?: string }> {
-    if (!isSupabaseConfigured || !supabase) {
-      // Leitura local em formato Base64 para demonstração sem backend
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve({ url: reader.result as string });
-        };
-        reader.onerror = () => {
-          resolve({ url: null, error: 'Erro ao ler arquivo de imagem local.' });
-        };
-        reader.readAsDataURL(file);
-      });
+    // Convert File to Base64 first
+    const base64Data = await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+
+    if (!base64Data) {
+      return { url: null, error: 'Erro ao ler arquivo de imagem.' };
     }
 
+    // 1. Tenta enviar para a API central do servidor Express
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true,
-        });
-
-      if (uploadError) {
-        console.warn(`Upload no bucket '${bucket}' falhou (${uploadError.message}). Utilizando fallback para Base64 local:`, uploadError);
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve({ url: reader.result as string });
-          };
-          reader.onerror = () => {
-            resolve({ url: null, error: 'Erro ao converter imagem em Base64 local.' });
-          };
-          reader.readAsDataURL(file);
-        });
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.url) {
+          return { url: json.url };
+        }
       }
-
-      const { data } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(fileName);
-
-      return { url: data.publicUrl };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao realizar upload da imagem';
-      return { url: null, error: msg };
+    } catch (err) {
+      console.warn('API /api/upload indisponível, usando fallback de base64/Supabase...');
     }
+
+    // 2. Se Supabase estiver configurado, faz upload no Supabase
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+
+        if (!uploadError) {
+          const { data } = supabase.storage
+            .from(bucket)
+            .getPublicUrl(fileName);
+
+          return { url: data.publicUrl };
+        }
+      } catch (err) {
+        console.warn('Erro ao fazer upload no Supabase Storage:', err);
+      }
+    }
+
+    // Retorna a representação base64 se nenhuma API remota respondeu
+    return { url: base64Data };
   },
 
   /**
@@ -99,9 +107,9 @@ export const storageService = {
   /**
    * Lista os arquivos de uma pasta do Storage
    */
-  async listImages(folder = 'uploads', bucket = 'images') {
+  async listFiles(folder = 'uploads', bucket = 'images'): Promise<string[]> {
     if (!isSupabaseConfigured || !supabase) {
-      return { data: [], error: null };
+      return [];
     }
 
     try {
@@ -109,9 +117,13 @@ export const storageService = {
         .from(bucket)
         .list(folder);
 
-      return { data, error };
-    } catch (err) {
-      return { data: null, error: err };
+      if (error || !data) {
+        return [];
+      }
+
+      return data.map((item) => `${folder}/${item.name}`);
+    } catch {
+      return [];
     }
   },
 };

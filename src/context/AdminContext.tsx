@@ -297,10 +297,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return url;
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = async () => {
     if (window.confirm('Tem certeza que deseja restaurar as fotos, textos e preços originais do site?')) {
       setSiteConfig(DEFAULT_SITE_CONFIG);
-      setProducts(PRODUCTS);
+      const defaultProds = await productService.resetProducts();
+      setProducts(defaultProds);
+      await configService.updateSiteConfig(DEFAULT_SITE_CONFIG);
       const keysToRemove = [
         'docemundo_site_config_v1',
         'docemundo_site_config',

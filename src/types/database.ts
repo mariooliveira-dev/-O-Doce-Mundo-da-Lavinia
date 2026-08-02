@@ -21,6 +21,7 @@ export interface DbProduct {
   rating?: number;
   review_count?: number;
   customizable?: boolean;
+  available?: boolean;
   options?: any;
   created_at?: string;
   updated_at?: string;
