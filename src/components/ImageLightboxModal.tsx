@@ -206,33 +206,42 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
 
             {/* Action Buttons */}
             <div className="pt-4 border-t border-white/10 space-y-2">
-              <button
-                onClick={handleAddAction}
-                className={`w-full py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer ${
-                  currentProduct.customizable
-                    ? 'bg-[#E85D75] hover:bg-[#D84B65] text-white'
-                    : isAdded
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-[#E85D75] hover:bg-[#D84B65] text-white hover:scale-[1.02]'
-                }`}
-              >
-                {currentProduct.customizable ? (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Personalizar este Bolo</span>
-                  </>
-                ) : isAdded ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Adicionado ao Carrinho!</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Adicionar ao Pedido</span>
-                  </>
-                )}
-              </button>
+              {currentProduct.available === false ? (
+                <button
+                  disabled
+                  className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-white/10 text-white/50 border border-white/10 cursor-not-allowed text-center"
+                >
+                  Doce Indisponível no Momento 🔴
+                </button>
+              ) : (
+                <button
+                  onClick={handleAddAction}
+                  className={`w-full py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer ${
+                    currentProduct.customizable
+                      ? 'bg-[#E85D75] hover:bg-[#D84B65] text-white'
+                      : isAdded
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-[#E85D75] hover:bg-[#D84B65] text-white hover:scale-[1.02]'
+                  }`}
+                >
+                  {currentProduct.customizable ? (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Personalizar este Bolo</span>
+                    </>
+                  ) : isAdded ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Adicionado ao Carrinho!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Adicionar ao Pedido</span>
+                    </>
+                  )}
+                </button>
+              )}
 
               <p className="text-2xs text-center text-white/50">
                 Aperte <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white">ESC</kbd> para fechar a visualização

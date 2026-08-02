@@ -76,6 +76,7 @@ export const AdminPanelModal: React.FC = () => {
   const [newProdDescription, setNewProdDescription] = useState('');
   const [newProdImage, setNewProdImage] = useState('');
   const [newProdBadge, setNewProdBadge] = useState('');
+  const [newProdAvailable, setNewProdAvailable] = useState<boolean>(true);
 
   // Editing existing product state
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -84,6 +85,7 @@ export const AdminPanelModal: React.FC = () => {
   const [editImage, setEditImage] = useState<string>('');
   const [editDescription, setEditDescription] = useState<string>('');
   const [editBadge, setEditBadge] = useState<string>('');
+  const [editAvailable, setEditAvailable] = useState<boolean>(true);
 
   if (!isAdminOpen) return null;
 
@@ -175,6 +177,7 @@ export const AdminPanelModal: React.FC = () => {
     setEditImage(prod.image);
     setEditDescription(prod.description);
     setEditBadge(prod.badge || '');
+    setEditAvailable(prod.available !== false);
   };
 
   const saveEditedProduct = (id: string) => {
@@ -185,6 +188,7 @@ export const AdminPanelModal: React.FC = () => {
       image: editImage,
       description: editDescription,
       badge: editBadge || undefined,
+      available: editAvailable,
     });
     setEditingProductId(null);
   };
@@ -201,6 +205,7 @@ export const AdminPanelModal: React.FC = () => {
       description: newProdDescription || 'Doce artesanal feito com carinho pela Lavínia.',
       image: newProdImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
       badge: newProdBadge || undefined,
+      available: newProdAvailable,
     });
 
     // Reset new product form
@@ -209,6 +214,7 @@ export const AdminPanelModal: React.FC = () => {
     setNewProdDescription('');
     setNewProdImage('');
     setNewProdBadge('');
+    setNewProdAvailable(true);
     setIsAddingProduct(false);
   };
 
@@ -589,6 +595,18 @@ export const AdminPanelModal: React.FC = () => {
                           />
                         </div>
 
+                        <div>
+                          <label className="block font-semibold text-[#3D231D] mb-1">Status no Cardápio:</label>
+                          <select
+                            value={newProdAvailable ? 'disponivel' : 'indisponivel'}
+                            onChange={(e) => setNewProdAvailable(e.target.value === 'disponivel')}
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#F4ACB7] font-semibold text-[#3D231D]"
+                          >
+                            <option value="disponivel">🟢 Disponível para Pedidos</option>
+                            <option value="indisponivel">🔴 Indisponível / Esgotado</option>
+                          </select>
+                        </div>
+
                         <div className="sm:col-span-2">
                           <label className="block font-semibold text-[#3D231D] mb-1">Descrição:</label>
                           <textarea
@@ -698,10 +716,21 @@ export const AdminPanelModal: React.FC = () => {
                                       className="flex-1 px-2 py-0.5 border border-pink-200 rounded text-2xs"
                                     />
                                   </div>
+                                  <div className="flex items-center gap-2 pt-1">
+                                    <label className="flex items-center gap-1.5 cursor-pointer text-2xs font-bold text-[#3D231D]">
+                                      <input
+                                        type="checkbox"
+                                        checked={editAvailable}
+                                        onChange={(e) => setEditAvailable(e.target.checked)}
+                                        className="rounded text-[#E85D75] focus:ring-[#E85D75] w-4 h-4 cursor-pointer"
+                                      />
+                                      <span>{editAvailable ? '🟢 Disponível no Cardápio' : '🔴 Indisponível / Esgotado'}</span>
+                                    </label>
+                                  </div>
                                 </div>
                               ) : (
                                 <div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <h4 className="font-bold text-sm text-[#3D231D] truncate">
                                       {prod.name}
                                     </h4>
@@ -710,6 +739,20 @@ export const AdminPanelModal: React.FC = () => {
                                         {prod.badge}
                                       </span>
                                     )}
+                                    {/* Quick Availability Switch Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => updateProduct(prod.id, { available: prod.available === false ? true : false })}
+                                      className={`px-2 py-0.5 rounded-full text-3xs font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0 ${
+                                        prod.available !== false
+                                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300'
+                                          : 'bg-red-100 text-red-800 hover:bg-red-200 border border-red-300'
+                                      }`}
+                                      title="Clique para alternar disponibilidade rapidamente"
+                                    >
+                                      <span className={`w-1.5 h-1.5 rounded-full ${prod.available !== false ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                      <span>{prod.available !== false ? 'Disponível' : 'Indisponível'}</span>
+                                    </button>
                                   </div>
                                   <p className="text-2xs text-[#5C3A21] line-clamp-1 mt-0.5">
                                     {prod.description}

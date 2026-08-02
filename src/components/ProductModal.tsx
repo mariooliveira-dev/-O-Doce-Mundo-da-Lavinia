@@ -17,6 +17,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const { siteConfig } = useAdmin();
   if (!product) return null;
 
+  const isAvailable = product.available !== false;
   const [quantity, setQuantity] = useState(1);
   const [selectedFlavor, setSelectedFlavor] = useState<string>(
     product.options?.flavors?.[0] || ''
@@ -224,28 +225,38 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
             {/* Total Price & Confirm Button */}
             <div className="flex-1 w-full">
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={isAdded}
-                className={`w-full py-3.5 px-6 rounded-full font-bold text-sm sm:text-base shadow-md transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-                  isAdded
-                    ? 'bg-emerald-600 text-white scale-[1.02]'
-                    : 'bg-[#E85D75] hover:bg-[#D84B65] text-white hover:shadow-lg'
-                }`}
-              >
-                {isAdded ? (
-                  <div className="flex items-center gap-2 animate-in zoom-in-75 duration-200">
-                    <Check className="w-5 h-5 stroke-[2.5]" />
-                    <span>Item Adicionado ao Carrinho!</span>
-                  </div>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-5 h-5" />
-                    <span>Adicionar ao Carrinho • R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
-                  </>
-                )}
-              </button>
+              {!isAvailable ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3.5 px-6 rounded-full font-bold text-sm sm:text-base bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 text-center"
+                >
+                  Doce Indisponível no Momento 🔴
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={isAdded}
+                  className={`w-full py-3.5 px-6 rounded-full font-bold text-sm sm:text-base shadow-md transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                    isAdded
+                      ? 'bg-emerald-600 text-white scale-[1.02]'
+                      : 'bg-[#E85D75] hover:bg-[#D84B65] text-white hover:shadow-lg'
+                  }`}
+                >
+                  {isAdded ? (
+                    <div className="flex items-center gap-2 animate-in zoom-in-75 duration-200">
+                      <Check className="w-5 h-5 stroke-[2.5]" />
+                      <span>Item Adicionado ao Carrinho!</span>
+                    </div>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-5 h-5" />
+                      <span>Adicionar ao Carrinho • R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
           </div>

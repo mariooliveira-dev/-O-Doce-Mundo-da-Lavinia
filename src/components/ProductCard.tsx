@@ -16,8 +16,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onOpenLightbox,
 }) => {
   const [isAdded, setIsAdded] = useState(false);
+  const isAvailable = product.available !== false;
 
   const handleDirectAdd = () => {
+    if (!isAvailable) return;
     onAddToCartDirect(product);
     setIsAdded(true);
     setTimeout(() => {
@@ -25,7 +27,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }, 1500);
   };
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden border border-[#F4ACB7]/30 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between transform hover:scale-[1.03] hover:-translate-y-1">
+    <div className={`group bg-white rounded-2xl overflow-hidden border border-[#F4ACB7]/30 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between transform hover:scale-[1.03] hover:-translate-y-1 ${
+      !isAvailable ? 'opacity-85 grayscale-[20%]' : ''
+    }`}>
       
       {/* Image container with Lightbox Trigger */}
       <div
@@ -37,7 +41,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           alt={product.name}
           loading="lazy"
           decoding="async"
-          className="w-full h-full object-cover group-hover:scale-105 group-hover/img:scale-110 transition-transform duration-500"
+          className={`w-full h-full object-cover group-hover:scale-105 group-hover/img:scale-110 transition-transform duration-500 ${
+            !isAvailable ? 'brightness-90' : ''
+          }`}
           referrerPolicy="no-referrer"
         />
 
@@ -56,8 +62,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
+        {/* Unavailable Banner Badge */}
+        {!isAvailable && (
+          <div className="absolute inset-x-0 bottom-0 bg-red-600/90 text-white text-center py-1.5 text-xs font-extrabold tracking-wider uppercase backdrop-blur-xs shadow-md">
+            Indisponível no Momento
+          </div>
+        )}
+
         {/* Customization Icon */}
-        {product.customizable && (
+        {product.customizable && isAvailable && (
           <div className="absolute top-3 right-3 bg-[#E85D75] text-white p-1.5 rounded-full shadow-md" title="Personalizável">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
@@ -67,7 +80,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Content */}
       <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
         <div>
-          <div className="flex items-center justify-end gap-2 mb-1">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            {!isAvailable ? (
+              <span className="text-2xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
+                Esgotado
+              </span>
+            ) : <div />}
             <div className="flex items-center gap-1 text-xs text-amber-500 font-bold">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
               <span>{product.rating.toFixed(1)}</span>
@@ -94,7 +112,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {product.customizable ? (
+            {!isAvailable ? (
+              <button
+                disabled
+                className="px-3.5 py-2 rounded-full bg-gray-100 text-gray-400 font-bold text-xs cursor-not-allowed border border-gray-200"
+              >
+                Indisponível
+              </button>
+            ) : product.customizable ? (
               <button
                 onClick={() => onSelectProduct(product)}
                 className="px-4 py-2 rounded-full bg-[#FFE5EC] hover:bg-[#E85D75] text-[#E85D75] hover:text-white font-bold text-xs transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"

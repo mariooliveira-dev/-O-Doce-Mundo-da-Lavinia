@@ -11,6 +11,7 @@ export interface Product {
   rating: number;
   reviewCount: number;
   customizable?: boolean;
+  available?: boolean;
   options?: {
     flavors?: string[];
     fillings?: string[];
