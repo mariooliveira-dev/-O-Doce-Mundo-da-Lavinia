@@ -22,7 +22,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
   const categories: { id: ProductCategory; label: string; icon: string }[] = [
     { id: 'todos', label: 'Todos os Bolos', icon: '🥮' },
     { id: 'vulcao', label: 'Bolo Vulcão', icon: '🌋' },
-    { id: 'com_cobertura', label: 'Bolo COM Cobertura', icon: '🍰' },
+    { id: 'com_cobertura', label: 'Bolo cOM Cobertura', icon: '🍰' },
     { id: 'piscina', label: 'O Bolo Piscina', icon: '🏊‍♀️' },
   ];
 
@@ -124,7 +124,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs px-2">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[#5C3A21] font-semibold text-2xs uppercase tracking-wider">Mais buscados:</span>
-                {['Cenoura', 'Ninho', 'Vulcão', 'Chocolate', 'Goiabada', 'Churros'].map((term) => (
+                {['Cenoura', 'Ninho', 'Vulcão', 'Chocolate', 'Goiabada', 'Milho'].map((term) => (
                   <button
                     key={term}
                     type="button"
