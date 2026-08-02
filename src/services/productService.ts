@@ -14,7 +14,7 @@ export const productService = {
     // 1. Tenta buscar no servidor Express central (compartilhado entre todos os navegadores)
     try {
       const res = await fetch('/api/products');
-      if (res.ok) {
+      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data) && json.data.length > 0) {
           saveProductsToStorage(json.data);
@@ -52,7 +52,7 @@ export const productService = {
 
           saveProductsToStorage(remoteProducts);
 
-          // Tenta salvar de volta no servidor para manter em sincronia
+          // Tenta salvar de volta no servidor local para manter em sincronia
           try {
             fetch('/api/products', {
               method: 'POST',
@@ -62,6 +62,9 @@ export const productService = {
           } catch {}
 
           return remoteProducts;
+        } else if (!error && data && data.length === 0 && savedLocal && savedLocal.length > 0) {
+          // Se o Supabase estiver limpo, envia os produtos atuais locais para preenchê-lo pela primeira vez
+          await this.saveAllProducts(savedLocal);
         }
       } catch (err) {
         console.error('Erro ao buscar produtos no Supabase:', err);
@@ -114,7 +117,7 @@ export const productService = {
         };
 
         await (supabase.from('produtos') as any)
-          .insert([dbPayload]);
+          .upsert([dbPayload], { onConflict: 'id' });
       } catch (err) {
         console.error('Falha na inserção no Supabase:', err);
       }
@@ -138,10 +141,10 @@ export const productService = {
       console.warn('Falha ao atualizar no servidor Express:', err);
     }
 
-    // 2. Se Supabase estiver configurado, atualiza lá também
+    // 2. Se Supabase estiver configurado, atualiza/upsert no Supabase
     if (isSupabaseConfigured && supabase) {
       try {
-        const dbPayload: Partial<DbProduct> = {};
+        const dbPayload: Partial<DbProduct> = { id };
         if (updated.name !== undefined) dbPayload.name = updated.name;
         if (updated.category !== undefined) dbPayload.category = updated.category;
         if (updated.description !== undefined) dbPayload.description = updated.description;
@@ -153,8 +156,7 @@ export const productService = {
         if (updated.options !== undefined) dbPayload.options = updated.options || null;
 
         await (supabase.from('produtos') as any)
-          .update(dbPayload)
-          .eq('id', id);
+          .upsert(dbPayload, { onConflict: 'id' });
       } catch (err) {
         console.error('Falha ao atualizar produto no Supabase:', err);
       }
@@ -191,7 +193,7 @@ export const productService = {
   },
 
   /**
-   * Salva uma lista completa de produtos de uma vez (em batch) no servidor
+   * Salva uma lista completa de produtos de uma vez (em batch) no servidor e no Supabase
    */
   async saveAllProducts(products: Product[]): Promise<boolean> {
     saveProductsToStorage(products);
@@ -201,11 +203,35 @@ export const productService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(products),
       });
-      return true;
     } catch (err) {
       console.warn('Erro ao salvar lote de produtos no servidor:', err);
-      return false;
     }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const dbPayloads: DbProduct[] = products.map((product) => ({
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          description: product.description,
+          price: product.price,
+          image: product.image,
+          badge: product.badge || null,
+          rating: product.rating || 5.0,
+          review_count: product.reviewCount || 1,
+          customizable: Boolean(product.customizable),
+          available: product.available !== false,
+          options: product.options || null,
+        }));
+
+        await (supabase.from('produtos') as any)
+          .upsert(dbPayloads, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Erro ao enviar batch de produtos para o Supabase:', err);
+      }
+    }
+
+    return true;
   },
 
   /**

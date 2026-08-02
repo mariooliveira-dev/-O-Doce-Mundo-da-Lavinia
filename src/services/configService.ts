@@ -18,7 +18,7 @@ export const configService = {
     // 1. Tenta buscar no servidor Express central (sincronizado em todos os navegadores)
     try {
       const res = await fetch('/api/config');
-      if (res.ok) {
+      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
         const json = await res.json();
         if (json.success && json.data) {
           const serverConfig = { ...DEFAULT_SITE_CONFIG, ...json.data };

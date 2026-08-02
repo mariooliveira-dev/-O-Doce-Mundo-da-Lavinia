@@ -22,10 +22,18 @@ import {
   Mail,
   ArrowLeft,
   AlertCircle,
+  Database,
+  Cloud,
+  CloudOff,
+  Download,
+  UploadCloud,
+  Info,
 } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import { ProductCategory, Product } from '../types';
 import { authService } from '../services/authService';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { productService } from '../services/productService';
 
 export const AdminPanelModal: React.FC = () => {
   const {
@@ -86,6 +94,48 @@ export const AdminPanelModal: React.FC = () => {
   const [editDescription, setEditDescription] = useState<string>('');
   const [editBadge, setEditBadge] = useState<string>('');
   const [editAvailable, setEditAvailable] = useState<boolean>(true);
+
+  // Cloud Sync & Vercel Tutorial State
+  const [showVercelTutorial, setShowVercelTutorial] = useState(false);
+
+  const handleExportBackup = () => {
+    const backupData = {
+      siteConfig,
+      products,
+      exportedAt: new Date().toISOString(),
+    };
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `odocemundo_cardapio_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        if (json.siteConfig) {
+          await updateSiteConfig(json.siteConfig);
+        }
+        if (json.products && Array.isArray(json.products)) {
+          await productService.saveAllProducts(json.products);
+          window.location.reload();
+        } else {
+          alert('Backup importado com sucesso!');
+        }
+      } catch {
+        alert('Formato de arquivo de backup inválido.');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   if (!isAdminOpen) return null;
 
@@ -499,6 +549,94 @@ export const AdminPanelModal: React.FC = () => {
                   </button>
                 </div>
 
+              </div>
+
+              {/* Status Banner: Multi-device & Cloud Sync Status */}
+              <div className={`p-4 rounded-2xl border text-xs space-y-2.5 transition-all ${
+                isSupabaseConfigured
+                  ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                  : 'bg-amber-50/90 border-amber-200 text-amber-950'
+              }`}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`p-2 rounded-xl shrink-0 ${isSupabaseConfigured ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                      {isSupabaseConfigured ? <Cloud className="w-5 h-5" /> : <CloudOff className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-sm">
+                          {isSupabaseConfigured
+                            ? '🟢 Sincronização na Nuvem Ativa (Supabase)'
+                            : '⚠️ Salvo no Navegador Local (Sem Nuvem Configurada no Vercel)'}
+                        </h4>
+                        <span className={`px-2 py-0.5 rounded-full text-3xs font-extrabold uppercase tracking-wider ${
+                          isSupabaseConfigured ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'
+                        }`}>
+                          {isSupabaseConfigured ? 'Visível p/ Todos' : 'Local'}
+                        </span>
+                      </div>
+                      <p className="text-2xs opacity-90 mt-0.5 leading-normal">
+                        {isSupabaseConfigured
+                          ? 'Suas edições são salvas automaticamente na nuvem e aparecem instantaneamente para qualquer cliente em qualquer computador ou celular!'
+                          : 'As alterações feitas neste computador são salvas no seu navegador. Para que os clientes no Vercel (odocemundo.vercel.app) vejam em tempo real, conecte o Supabase no Vercel ou use a exportação abaixo.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Export / Import & Tutorial Buttons */}
+                  <div className="flex items-center gap-2 shrink-0 ml-auto">
+                    <button
+                      onClick={handleExportBackup}
+                      className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 text-gray-800 font-bold text-2xs border border-gray-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Baixar arquivo JSON com todos os produtos e fotos"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#E85D75]" />
+                      <span>Exportar Backup</span>
+                    </button>
+
+                    <label className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 text-gray-800 font-bold text-2xs border border-gray-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer">
+                      <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Importar Backup</span>
+                      <input type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
+                    </label>
+
+                    {!isSupabaseConfigured && (
+                      <button
+                        onClick={() => setShowVercelTutorial(!showVercelTutorial)}
+                        className="px-3 py-1.5 rounded-lg bg-[#E85D75] hover:bg-[#d44860] text-white font-bold text-2xs shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <Info className="w-3.5 h-3.5" />
+                        <span>{showVercelTutorial ? 'Ocultar Ajuda' : 'Sincronizar no Vercel'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Vercel Tutorial Expandable Block */}
+                {showVercelTutorial && !isSupabaseConfigured && (
+                  <div className="mt-3 p-4 bg-white rounded-xl border border-amber-300 text-gray-800 text-2xs space-y-3 shadow-inner">
+                    <h5 className="font-bold text-xs text-[#3D231D] flex items-center gap-1.5">
+                      <Database className="w-4 h-4 text-[#E85D75]" />
+                      <span>Por que as alterações feitas aqui não aparecem no computador do cliente?</span>
+                    </h5>
+                    <p className="text-gray-600 leading-relaxed">
+                      Como o site está hospedado no Vercel (<code>odocemundo.vercel.app</code>), sem um banco de dados em nuvem configurado nas variáveis de ambiente do Vercel, o site usa o <strong>armazenamento do seu próprio navegador (localStorage)</strong>. Por isso, as alterações ficam salvas no seu PC, mas outros computadores abrem a versão original.
+                    </p>
+                    <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-3xs font-mono space-y-1">
+                      <div className="font-bold text-amber-900 mb-1">🔑 Adicione estas 2 variáveis no painel do Vercel:</div>
+                      <div><strong className="text-[#E85D75]">VITE_SUPABASE_URL</strong> = https://seu-projeto.supabase.co</div>
+                      <div><strong className="text-[#E85D75]">VITE_SUPABASE_ANON_KEY</strong> = sua-chave-anon-publica-do-supabase</div>
+                    </div>
+                    <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                      <li>Acesse seu projeto em <a href="https://vercel.com" target="_blank" rel="noreferrer" className="text-blue-600 underline font-bold">Vercel.com</a> &gt; <strong>Settings</strong> &gt; <strong>Environment Variables</strong>.</li>
+                      <li>Cole as chaves <code className="bg-gray-100 px-1 rounded text-[#E85D75]">VITE_SUPABASE_URL</code> e <code className="bg-gray-100 px-1 rounded text-[#E85D75]">VITE_SUPABASE_ANON_KEY</code>.</li>
+                      <li>Clique em <strong>Redeploy</strong> no Vercel. Pronto! Todas as edições sincronizam para todos os clientes em tempo real.</li>
+                    </ol>
+                    <div className="p-2 bg-emerald-50 rounded-lg text-emerald-800 text-2xs font-bold border border-emerald-200">
+                      💡 Enquanto isso, você pode usar o botão "Exportar Backup" acima para salvar seu cardápio em um arquivo JSON e clicar em "Importar Backup" em qualquer outro navegador!
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* TAB 1: CARDÁPIO, PREÇOS E FOTOS DE PRODUTOS */}
