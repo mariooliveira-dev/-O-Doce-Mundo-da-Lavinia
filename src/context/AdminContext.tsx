@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Product } from '../types';
 import { PRODUCTS } from '../data/products';
 import { configService } from '../services/configService';
@@ -12,6 +13,8 @@ import {
   getSavedConfigFromStorage,
   saveConfigToStorage,
 } from '../utils/storage';
+import { useProductsQuery, useSiteConfigQuery, QUERY_KEY_PRODUCTS, QUERY_KEY_CONFIG } from '../hooks/useMenuQuery';
+import { purgeObsoleteLocalCache } from '../utils/cacheManager';
 
 export interface SiteConfig {
   phoneDisplay: string;
@@ -67,29 +70,21 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasAdminExists, setHasAdminExists] = useState<boolean>(true);
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEY_AUTH) === 'true';
   });
 
-  const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => {
-    const saved = getSavedConfigFromStorage();
-    if (saved) {
-      return { ...DEFAULT_SITE_CONFIG, ...saved };
-    }
-    return DEFAULT_SITE_CONFIG;
-  });
+  // React Query Hooks com cache inteligente e purga de localStorage
+  const { data: productsData } = useProductsQuery();
+  const { data: configData } = useSiteConfigQuery();
 
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = getSavedProductsFromStorage();
-    if (saved) {
-      return saved;
-    }
-    return PRODUCTS;
-  });
+  const products = productsData || PRODUCTS;
+  const siteConfig = configData || DEFAULT_SITE_CONFIG;
 
   const checkAdminExists = async (): Promise<boolean> => {
     const exists = await authService.hasAdminUser();
@@ -97,42 +92,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return exists;
   };
 
-  // Carrega dados iniciais do Supabase (com fallback)
   useEffect(() => {
-    let mounted = true;
-
-    async function loadInitialData() {
-      setIsLoading(true);
-      try {
-        const [remoteConfig, remoteProducts, currentSession, adminRegistered] = await Promise.all([
-          configService.fetchSiteConfig(),
-          productService.fetchProducts(),
-          authService.getSession(),
-          authService.hasAdminUser(),
-        ]);
-
-        if (mounted) {
-          if (currentSession?.user) {
-            setIsLoggedIn(true);
-            setHasAdminExists(true);
-          } else {
-            setHasAdminExists(adminRegistered);
-          }
-          if (remoteConfig) {
-            setSiteConfig(remoteConfig);
-          }
-          if (remoteProducts && remoteProducts.length > 0) {
-            setProducts(remoteProducts);
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao carregar dados remotos do Supabase:', err);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    }
-
-    loadInitialData();
+    // Purga de chaves antigas e inutilizadas do localStorage
+    purgeObsoleteLocalCache();
 
     // Inscrição em mudanças de estado do Supabase Auth
     const { unsubscribe } = authService.onAuthStateChange((_event, session) => {
@@ -144,17 +106,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     return () => {
-      mounted = false;
       unsubscribe();
     };
   }, []);
 
-  // Sincroniza localmente para resiliência e offline
-  useEffect(() => {
-    saveConfigToStorage(siteConfig);
-  }, [siteConfig]);
-
-  // Sincroniza dynamic Open Graph, Twitter Card e Favicon com a logo oficial do site
+  // Dynamic Open Graph & Favicon
   useEffect(() => {
     const rawLogo = siteConfig.logoUrl ? siteConfig.logoUrl.trim() : '';
     let logoImageToUse = rawLogo || '/logo-og.svg';
@@ -182,7 +138,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setMetaTag('meta[property="og:image"]', 'content', logoImageToUse);
     setMetaTag('meta[name="twitter:image"]', 'content', logoImageToUse);
 
-    // Atualiza links de favicon dinamicamente
     const setLinkTag = (rel: string, id: string, hrefVal: string) => {
       let link: HTMLLinkElement | null = document.querySelector(`link#${id}`);
       if (!link) {
@@ -199,10 +154,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [siteConfig.logoUrl]);
 
   useEffect(() => {
-    saveProductsToStorage(products);
-  }, [products]);
-
-  useEffect(() => {
     localStorage.setItem(STORAGE_KEY_AUTH, isLoggedIn ? 'true' : 'false');
   }, [isLoggedIn]);
 
@@ -213,14 +164,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const closeAdminModal = () => setIsAdminOpen(false);
 
   const loginWithEmail = async (email: string, password: string) => {
-    // 1. Tenta autenticação no Supabase
     const res = await authService.loginWithEmail(email, password);
     if (res.user) {
       setIsLoggedIn(true);
       return { success: true };
     }
 
-    // 2. Fallback: Se a senha conferir com a senha mestra salva no siteConfig ou '1234'
     if (
       password &&
       (password === siteConfig.adminPassword ||
@@ -231,8 +180,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: true };
     }
 
-    // 3. Caso o Supabase retorne "E-mail não confirmado" (pois a opção 'Confirm email' está ativada por padrão no Supabase),
-    // mas a pessoa está fornecendo a senha cadastrada para entrar, permitimos a entrada local sem travar o painel!
     if (
       res.error &&
       (res.error.toLowerCase().includes('não confirmado') ||
@@ -247,10 +194,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const signUpAdmin = async (fullName: string, email: string, password: string) => {
     const res = await authService.signUpInitialAdmin(fullName, email, password);
-    
-    // Atualiza a senha mestra no siteConfig para garantir que o login local sempre funcione com essa senha
     const updatedConfig = { ...siteConfig, adminPassword: password };
-    setSiteConfig(updatedConfig);
+    
+    queryClient.setQueryData(QUERY_KEY_CONFIG, updatedConfig);
+    saveConfigToStorage(updatedConfig);
     configService.updateSiteConfig(updatedConfig);
 
     if (res.user) {
@@ -272,25 +219,34 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSiteConfig = async (newConfig: Partial<SiteConfig>) => {
     const updated = { ...siteConfig, ...newConfig };
-    setSiteConfig(updated);
+    queryClient.setQueryData(QUERY_KEY_CONFIG, updated);
+    saveConfigToStorage(updated);
     await configService.updateSiteConfig(updated);
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY_CONFIG });
   };
 
   const updateProduct = async (id: string, updated: Partial<Product>) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updated } : p))
-    );
+    const newProducts = products.map((p) => (p.id === id ? { ...p, ...updated } : p));
+    queryClient.setQueryData(QUERY_KEY_PRODUCTS, newProducts);
+    saveProductsToStorage(newProducts);
     await productService.updateProduct(id, updated);
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
   };
 
   const addProduct = async (newProd: Omit<Product, 'id' | 'rating' | 'reviewCount'>) => {
     const created = await productService.createProduct(newProd);
-    setProducts((prev) => [created, ...prev]);
+    const newProducts = [created, ...products];
+    queryClient.setQueryData(QUERY_KEY_PRODUCTS, newProducts);
+    saveProductsToStorage(newProducts);
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
   };
 
   const deleteProduct = async (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+    const newProducts = products.filter((p) => p.id !== id);
+    queryClient.setQueryData(QUERY_KEY_PRODUCTS, newProducts);
+    saveProductsToStorage(newProducts);
     await productService.deleteProduct(id);
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
@@ -300,14 +256,18 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const importBackup = async (data: { siteConfig?: Partial<SiteConfig>; products?: Product[] }) => {
     try {
+      if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+        queryClient.setQueryData(QUERY_KEY_PRODUCTS, data.products);
+        saveProductsToStorage(data.products);
+        await productService.saveAllProducts(data.products);
+        queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
+      }
       if (data.siteConfig) {
         const mergedConfig = { ...siteConfig, ...data.siteConfig };
-        setSiteConfig(mergedConfig);
+        queryClient.setQueryData(QUERY_KEY_CONFIG, mergedConfig);
+        saveConfigToStorage(mergedConfig);
         await configService.updateSiteConfig(mergedConfig);
-      }
-      if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-        setProducts(data.products);
-        await productService.saveAllProducts(data.products);
+        queryClient.invalidateQueries({ queryKey: QUERY_KEY_CONFIG });
       }
       return { success: true };
     } catch (err) {
@@ -318,20 +278,18 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const resetToDefaults = async () => {
     if (window.confirm('Tem certeza que deseja restaurar as fotos, textos e preços originais do site?')) {
-      setSiteConfig(DEFAULT_SITE_CONFIG);
+      queryClient.setQueryData(QUERY_KEY_CONFIG, DEFAULT_SITE_CONFIG);
+      saveConfigToStorage(DEFAULT_SITE_CONFIG);
+
       const defaultProds = await productService.resetProducts();
-      setProducts(defaultProds);
+      queryClient.setQueryData(QUERY_KEY_PRODUCTS, defaultProds);
+      saveProductsToStorage(defaultProds);
+
       await configService.updateSiteConfig(DEFAULT_SITE_CONFIG);
-      const keysToRemove = [
-        'docemundo_site_config_v1',
-        'docemundo_site_config',
-        'docemundo_products_v1',
-        'docemundo_products_v4',
-        'docemundo_products_v3',
-        'docemundo_products_v2',
-        'docemundo_products',
-      ];
-      keysToRemove.forEach((key) => localStorage.removeItem(key));
+      purgeObsoleteLocalCache();
+      
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY_CONFIG });
     }
   };
 
@@ -372,3 +330,4 @@ export const useAdmin = () => {
   }
   return context;
 };
+

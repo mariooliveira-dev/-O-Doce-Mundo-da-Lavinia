@@ -146,6 +146,11 @@ export const productService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
+        // Limpa a lista de produtos anterior no Supabase para evitar mistura de itens antigos ao importar backup
+        await (supabase.from('produtos') as any)
+          .delete()
+          .neq('id', '___impossible_id___');
+
         const dbPayloads: DbProduct[] = products.map((product) => ({
           id: product.id,
           name: product.name,
