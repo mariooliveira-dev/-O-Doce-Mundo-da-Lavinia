@@ -7,6 +7,7 @@ import { InstagramFeed } from './components/InstagramFeed';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
+import { CartSummaryFloat } from './components/CartSummaryFloat';
 import { AdminPanelModal } from './components/AdminPanelModal';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -126,6 +127,13 @@ export default function App() {
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
             onClearCart={handleClearCart}
+          />
+
+          {/* Fixed Floating Cart Summary Card when closed */}
+          <CartSummaryFloat
+            cartItems={cartItems}
+            isCartOpen={isCartOpen}
+            onOpenCart={() => setIsCartOpen(true)}
           />
 
           {/* Discreet Admin Management Modal */}

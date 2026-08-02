@@ -112,7 +112,11 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
     }
   };
 
+  const [isAdded, setIsAdded] = useState(false);
+
   const handleFinishKit = () => {
+    if (isAdded) return;
+    setIsAdded(true);
     const kitProduct: Product = {
       id: `custom-kit-${Date.now()}`,
       name: `Kit Festa Personalizado da Lavínia`,
@@ -137,7 +141,9 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
     };
 
     onAddToCart(cartItem);
-    onClose();
+    setTimeout(() => {
+      onClose();
+    }, 700);
   };
 
   const handleDirectWhatsAppKit = () => {
@@ -408,10 +414,24 @@ export const KitBuilder: React.FC<KitBuilderProps> = ({
                 <button
                   type="button"
                   onClick={handleFinishKit}
-                  className="px-6 py-3.5 rounded-full bg-[#E85D75] hover:bg-[#D84B65] text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                  disabled={isAdded}
+                  className={`px-6 py-3.5 rounded-full font-bold text-xs sm:text-sm shadow-md transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                    isAdded
+                      ? 'bg-emerald-600 text-white scale-105'
+                      : 'bg-[#E85D75] hover:bg-[#D84B65] text-white hover:shadow-lg'
+                  }`}
                 >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>Adicionar Kit ao Carrinho</span>
+                  {isAdded ? (
+                    <div className="flex items-center gap-1.5 animate-in zoom-in-75 duration-200">
+                      <Check className="w-4 h-4 stroke-[2.5]" />
+                      <span>Kit Adicionado ao Carrinho!</span>
+                    </div>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Adicionar Kit ao Carrinho</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}

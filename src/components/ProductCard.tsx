@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Product } from '../types';
-import { Star, Plus, Heart, Sparkles, MessageSquare } from 'lucide-react';
+import { Star, Plus, Check, Sparkles } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -13,6 +13,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onSelectProduct,
   onAddToCartDirect,
 }) => {
+  const [isAdded, setIsAdded] = useState(false);
+
+  const handleDirectAdd = () => {
+    onAddToCartDirect(product);
+    setIsAdded(true);
+    setTimeout(() => {
+      setIsAdded(false);
+    }, 1500);
+  };
   return (
     <div className="group bg-white rounded-2xl overflow-hidden border border-[#F4ACB7]/30 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between transform hover:scale-[1.03] hover:-translate-y-1">
       
@@ -86,18 +95,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.customizable ? (
               <button
                 onClick={() => onSelectProduct(product)}
-                className="px-4 py-2 rounded-full bg-[#FFE5EC] hover:bg-[#E85D75] text-[#E85D75] hover:text-white font-bold text-xs transition-colors flex items-center gap-1 shadow-2xs"
+                className="px-4 py-2 rounded-full bg-[#FFE5EC] hover:bg-[#E85D75] text-[#E85D75] hover:text-white font-bold text-xs transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
               >
                 <span>Personalizar</span>
                 <Sparkles className="w-3.5 h-3.5" />
               </button>
             ) : (
               <button
-                onClick={() => onAddToCartDirect(product)}
-                className="p-2.5 rounded-full bg-[#E85D75] hover:bg-[#D84B65] text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+                onClick={handleDirectAdd}
+                className={`transition-all duration-300 flex items-center justify-center font-bold text-xs shadow-md cursor-pointer ${
+                  isAdded
+                    ? 'px-3 py-2 rounded-full bg-emerald-600 text-white scale-105'
+                    : 'p-2.5 rounded-full bg-[#E85D75] hover:bg-[#D84B65] text-white hover:scale-105'
+                }`}
                 aria-label="Adicionar ao Pedido"
               >
-                <Plus className="w-4 h-4" />
+                {isAdded ? (
+                  <div className="flex items-center gap-1 animate-in zoom-in-75 duration-200">
+                    <Check className="w-4 h-4 stroke-[2.5]" />
+                    <span className="text-2xs font-bold whitespace-nowrap">Adicionado!</span>
+                  </div>
+                ) : (
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                )}
               </button>
             )}
           </div>

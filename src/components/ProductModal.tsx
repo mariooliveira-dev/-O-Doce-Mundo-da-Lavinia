@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product, CartItem } from '../types';
-import { X, Sparkles, Plus, Minus, ShoppingBag, Heart, MessageCircle } from 'lucide-react';
+import { X, Sparkles, Plus, Minus, ShoppingBag, Check } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 
 interface ProductModalProps {
@@ -29,6 +29,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   );
   const [customInscription, setCustomInscription] = useState('');
   const [extraNotes, setExtraNotes] = useState('');
+  const [isAdded, setIsAdded] = useState(false);
 
   // Calculate price extra from size
   const extraSizePrice =
@@ -37,6 +38,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const totalPrice = unitPrice * quantity;
 
   const handleAdd = () => {
+    if (isAdded) return;
+    setIsAdded(true);
     const item: CartItem = {
       id: `${product.id}-${Date.now()}`,
       product,
@@ -49,7 +52,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       totalPrice,
     };
     onAddToCart(item);
-    onClose();
+    setTimeout(() => {
+      onClose();
+    }, 700);
   };
 
   const handleDirectWhatsApp = () => {
@@ -222,10 +227,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               <button
                 type="button"
                 onClick={handleAdd}
-                className="w-full py-3.5 px-6 rounded-full bg-[#E85D75] hover:bg-[#D84B65] text-white font-bold text-sm sm:text-base shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                disabled={isAdded}
+                className={`w-full py-3.5 px-6 rounded-full font-bold text-sm sm:text-base shadow-md transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                  isAdded
+                    ? 'bg-emerald-600 text-white scale-[1.02]'
+                    : 'bg-[#E85D75] hover:bg-[#D84B65] text-white hover:shadow-lg'
+                }`}
               >
-                <ShoppingBag className="w-5 h-5" />
-                <span>Adicionar ao Carrinho • R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+                {isAdded ? (
+                  <div className="flex items-center gap-2 animate-in zoom-in-75 duration-200">
+                    <Check className="w-5 h-5 stroke-[2.5]" />
+                    <span>Item Adicionado ao Carrinho!</span>
+                  </div>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-5 h-5" />
+                    <span>Adicionar ao Carrinho • R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+                  </>
+                )}
               </button>
             </div>
 
