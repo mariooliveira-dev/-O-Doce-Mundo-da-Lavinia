@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ProductCategory, Product, CartItem } from '../types';
 import { ProductCard } from './ProductCard';
 import { ProductModal } from './ProductModal';
+import { ImageLightboxModal } from './ImageLightboxModal';
 import { Search, Cake, X } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 
@@ -18,12 +19,13 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
   const [activeCategory, setActiveCategory] = useState<ProductCategory>('todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
+  const [lightboxProduct, setLightboxProduct] = useState<Product | null>(null);
 
   const categories: { id: ProductCategory; label: string; icon: string }[] = [
     { id: 'todos', label: 'Todos os Bolos', icon: '🥮' },
     { id: 'vulcao', label: 'Bolo Vulcão', icon: '🌋' },
     { id: 'com_cobertura', label: 'Bolo Com Cobertura', icon: '🍰' },
-    { id: 'piscina', label: 'Bolo Piscina', icon: '🍰' },
+    { id: 'piscina', label: 'Bolo de Piscina', icon: '🎂' },
     { id: 'tradicionais', label: 'Bolos Tradicionais', icon: '🧁' },
   ];
 
@@ -183,19 +185,22 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
               {filteredProducts.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                  initial={{ opacity: 0, scale: 0.96, y: 20 }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-20px' }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{
-                    duration: 0.35,
-                    delay: Math.min(index * 0.04, 0.28),
-                    ease: [0.25, 0.1, 0.25, 1],
+                    duration: 0.45,
+                    delay: Math.min(index * 0.05, 0.3),
+                    ease: 'easeOut',
                   }}
                 >
                   <ProductCard
                     product={product}
                     onSelectProduct={(p) => setSelectedProductForModal(p)}
                     onAddToCartDirect={handleAddToCartDirect}
+                    onOpenLightbox={(p) => setLightboxProduct(p)}
                   />
                 </motion.div>
               ))}
@@ -239,6 +244,15 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
         product={selectedProductForModal}
         onClose={() => setSelectedProductForModal(null)}
         onAddToCart={onAddToCart}
+      />
+
+      {/* Fullscreen Image Lightbox Modal */}
+      <ImageLightboxModal
+        product={lightboxProduct}
+        productList={filteredProducts}
+        onClose={() => setLightboxProduct(null)}
+        onAddToCartDirect={handleAddToCartDirect}
+        onSelectProductForCustomization={(p) => setSelectedProductForModal(p)}
       />
     </section>
   );

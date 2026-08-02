@@ -4,6 +4,7 @@ import { Hero } from './components/Hero';
 import { AboutLavinia } from './components/AboutLavinia';
 import { MenuSection } from './components/MenuSection';
 import { InstagramFeed } from './components/InstagramFeed';
+import { Testimonials } from './components/Testimonials';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
@@ -14,9 +15,10 @@ import { ScrollToTop } from './components/ScrollToTop';
 import { AdminProvider } from './context/AdminContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartItem } from './types';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 export default function App() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useLocalStorage<CartItem[]>('docemundo_cart_v1', []);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const handleAddToCart = (newItem: CartItem) => {
@@ -107,6 +109,9 @@ export default function App() {
             <MenuSection
               onAddToCart={handleAddToCart}
             />
+
+            {/* Testimonials Section */}
+            <Testimonials />
 
             {/* Instagram Feed Section */}
             <InstagramFeed />

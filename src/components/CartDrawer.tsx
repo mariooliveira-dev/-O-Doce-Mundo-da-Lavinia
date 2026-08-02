@@ -23,6 +23,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const { siteConfig } = useAdmin();
 
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'details'>('cart');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   
   // Customer Checkout Details
   const [customer, setCustomer] = useState<CustomerDetails>({
@@ -122,6 +123,53 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             {checkoutStep === 'cart' ? (
               cartItems.length > 0 ? (
                 <div className="space-y-3">
+                  {/* Top Bar with Clear Cart Button */}
+                  <div className="flex items-center justify-between pb-1 border-b border-[#FFE5EC]">
+                    <span className="text-2xs font-bold text-[#3D231D]/70 uppercase tracking-wider">
+                      Seus Itens Selecionados
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowClearConfirm(true)}
+                      className="text-2xs font-bold text-red-500 hover:text-red-700 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Esvaziar Carrinho</span>
+                    </button>
+                  </div>
+
+                  {/* Confirmation Box */}
+                  {showClearConfirm && (
+                    <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-center space-y-2.5 animate-in fade-in duration-150">
+                      <div className="flex items-center justify-center gap-2 text-red-600 font-bold text-xs">
+                        <Trash2 className="w-4 h-4" />
+                        <span>Tem certeza que deseja esvaziar o carrinho?</span>
+                      </div>
+                      <p className="text-2xs text-red-500">
+                        Todos os produtos adicionados serão removidos.
+                      </p>
+                      <div className="flex justify-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowClearConfirm(false)}
+                          className="px-3.5 py-1.5 rounded-xl bg-white border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-all cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClearCart();
+                            setShowClearConfirm(false);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-all cursor-pointer shadow-xs"
+                        >
+                          Sim, Esvaziar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {cartItems.map((item) => (
                     <div
                       key={item.id}

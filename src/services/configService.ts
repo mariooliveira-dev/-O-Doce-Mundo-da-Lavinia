@@ -1,24 +1,22 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { SiteConfig, DEFAULT_SITE_CONFIG } from '../context/AdminContext';
 import { DbSiteConfig } from '../types/database';
+import { getSavedConfigFromStorage, saveConfigToStorage } from '../utils/storage';
 
 const CONFIG_ROW_ID = 'main_config';
 
 export const configService = {
   /**
-   * Busca as configurações gerais do site no Supabase
+   * Busca as configurações gerais do site no Supabase (com fallback local)
    */
   async fetchSiteConfig(): Promise<SiteConfig> {
+    const savedConfig = getSavedConfigFromStorage();
+    const localMergedConfig: SiteConfig = savedConfig
+      ? { ...DEFAULT_SITE_CONFIG, ...savedConfig }
+      : DEFAULT_SITE_CONFIG;
+
     if (!isSupabaseConfigured || !supabase) {
-      const saved = localStorage.getItem('docemundo_site_config_v1');
-      if (saved) {
-        try {
-          return { ...DEFAULT_SITE_CONFIG, ...JSON.parse(saved) };
-        } catch {
-          return DEFAULT_SITE_CONFIG;
-        }
-      }
-      return DEFAULT_SITE_CONFIG;
+      return localMergedConfig;
     }
 
     try {
@@ -30,12 +28,11 @@ export const configService = {
 
       if (error || !data) {
         console.warn('Configurações não encontradas no Supabase, usando padrão local.');
-        const saved = localStorage.getItem('docemundo_site_config_v1');
-        return saved ? { ...DEFAULT_SITE_CONFIG, ...JSON.parse(saved) } : DEFAULT_SITE_CONFIG;
+        return localMergedConfig;
       }
 
       const row = data as unknown as DbSiteConfig;
-      return {
+      const remoteConfig: SiteConfig = {
         phoneDisplay: row.phone_display || DEFAULT_SITE_CONFIG.phoneDisplay,
         phoneRaw: row.phone_raw || DEFAULT_SITE_CONFIG.phoneRaw,
         profileImage: row.profile_image || DEFAULT_SITE_CONFIG.profileImage,
@@ -48,22 +45,21 @@ export const configService = {
         logoSlogan: row.logo_slogan || DEFAULT_SITE_CONFIG.logoSlogan,
         adminPassword: DEFAULT_SITE_CONFIG.adminPassword,
       };
+
+      saveConfigToStorage(remoteConfig);
+      return remoteConfig;
     } catch (err) {
       console.error('Erro ao buscar configurações no Supabase:', err);
-      return DEFAULT_SITE_CONFIG;
+      return localMergedConfig;
     }
   },
 
   /**
-   * Salva ou atualiza as configurações do site no Supabase
+   * Salva ou atualiza as configurações do site no Supabase e no localStorage
    */
   async updateSiteConfig(config: SiteConfig): Promise<boolean> {
     // Guarda backup em localStorage para garantir que as alterações reflitam imediatamente na UI
-    try {
-      localStorage.setItem('docemundo_site_config_v1', JSON.stringify(config));
-    } catch {
-      // ignore
-    }
+    saveConfigToStorage(config);
 
     if (!isSupabaseConfigured || !supabase) {
       return true;
@@ -90,7 +86,6 @@ export const configService = {
 
       if (error) {
         console.warn('Supabase RLS ou aviso ao atualizar configuracoes (salvo localmente):', error.message);
-        // Mesmo com aviso de RLS, retorna true pois a alteração já está salva em localStorage
         return true;
       }
 

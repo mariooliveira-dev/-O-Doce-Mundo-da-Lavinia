@@ -2,22 +2,17 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Product } from '../types';
 import { PRODUCTS } from '../data/products';
 import { DbProduct, DbCategory } from '../types/database';
+import { getSavedProductsFromStorage, saveProductsToStorage } from '../utils/storage';
 
 export const productService = {
   /**
-   * Busca todos os produtos do Supabase (com fallback para PRODUCTS locais)
+   * Busca todos os produtos do Supabase (com fallback para cache no localStorage)
    */
   async fetchProducts(): Promise<Product[]> {
+    const savedLocal = getSavedProductsFromStorage();
+
     if (!isSupabaseConfigured || !supabase) {
-      const saved = localStorage.getItem('docemundo_products_v1');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          return PRODUCTS;
-        }
-      }
-      return PRODUCTS;
+      return savedLocal || PRODUCTS;
     }
 
     try {
@@ -28,12 +23,11 @@ export const productService = {
 
       if (error || !data || data.length === 0) {
         console.warn('Supabase produtos retornou vazio ou erro, usando cache local:', error?.message);
-        const saved = localStorage.getItem('docemundo_products_v1');
-        return saved ? JSON.parse(saved) : PRODUCTS;
+        return savedLocal || PRODUCTS;
       }
 
       const rows = data as DbProduct[];
-      return rows.map((item: DbProduct): Product => ({
+      const remoteProducts = rows.map((item: DbProduct): Product => ({
         id: item.id,
         name: item.name,
         category: item.category,
@@ -46,9 +40,13 @@ export const productService = {
         customizable: item.customizable,
         options: item.options || undefined,
       }));
+
+      // Salva no cache local para resiliência
+      saveProductsToStorage(remoteProducts);
+      return remoteProducts;
     } catch (err) {
       console.error('Erro ao buscar produtos no Supabase:', err);
-      return PRODUCTS;
+      return savedLocal || PRODUCTS;
     }
   },
 

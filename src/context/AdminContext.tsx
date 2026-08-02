@@ -5,6 +5,13 @@ import { configService } from '../services/configService';
 import { productService } from '../services/productService';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
+import {
+  STORAGE_KEY_AUTH,
+  getSavedProductsFromStorage,
+  saveProductsToStorage,
+  getSavedConfigFromStorage,
+  saveConfigToStorage,
+} from '../utils/storage';
 
 export interface SiteConfig {
   phoneDisplay: string;
@@ -58,10 +65,6 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-const STORAGE_KEY_CONFIG = 'docemundo_site_config_v1';
-const STORAGE_KEY_PRODUCTS = 'docemundo_products_v4';
-const STORAGE_KEY_AUTH = 'docemundo_admin_auth_v1';
-
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,25 +75,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CONFIG);
-      if (saved) {
-        return { ...DEFAULT_SITE_CONFIG, ...JSON.parse(saved) };
-      }
-    } catch (e) {
-      console.error('Error loading config from localStorage', e);
+    const saved = getSavedConfigFromStorage();
+    if (saved) {
+      return { ...DEFAULT_SITE_CONFIG, ...saved };
     }
     return DEFAULT_SITE_CONFIG;
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_PRODUCTS);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error('Error loading products from localStorage', e);
+    const saved = getSavedProductsFromStorage();
+    if (saved) {
+      return saved;
     }
     return PRODUCTS;
   });
@@ -155,7 +150,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Sincroniza localmente para resiliência e offline
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(siteConfig));
+    saveConfigToStorage(siteConfig);
   }, [siteConfig]);
 
   // Sincroniza dynamic Open Graph, Twitter Card e Favicon com a logo oficial do site
@@ -203,7 +198,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [siteConfig.logoUrl]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
+    saveProductsToStorage(products);
   }, [products]);
 
   useEffect(() => {
@@ -306,8 +301,16 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (window.confirm('Tem certeza que deseja restaurar as fotos, textos e preços originais do site?')) {
       setSiteConfig(DEFAULT_SITE_CONFIG);
       setProducts(PRODUCTS);
-      localStorage.removeItem(STORAGE_KEY_CONFIG);
-      localStorage.removeItem(STORAGE_KEY_PRODUCTS);
+      const keysToRemove = [
+        'docemundo_site_config_v1',
+        'docemundo_site_config',
+        'docemundo_products_v1',
+        'docemundo_products_v4',
+        'docemundo_products_v3',
+        'docemundo_products_v2',
+        'docemundo_products',
+      ];
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     }
   };
 

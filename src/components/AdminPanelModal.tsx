@@ -561,7 +561,7 @@ export const AdminPanelModal: React.FC = () => {
                           >
                             <option value="vulcao">Bolo Vulcão 🌋</option>
                             <option value="com_cobertura">Bolo com Cobertura 🍰</option>
-                            <option value="piscina">O Bolo Piscina 🏊‍♀️</option>
+                            <option value="piscina">Bolo de Piscina 🎂</option>
                             <option value="tradicionais">Bolos Tradicionais 🧁</option>
                           </select>
                         </div>
