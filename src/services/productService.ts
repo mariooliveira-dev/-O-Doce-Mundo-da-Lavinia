@@ -47,7 +47,21 @@ export const productService = {
       }
     }
 
-    // 2. Se não estiver no Supabase e for ambiente container local (não Vercel/estático)
+    // 2. Tenta buscar da API Central Express do Servidor (/api/products)
+    try {
+      const res = await fetch('/api/products');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          saveProductsToStorage(json.data);
+          return json.data;
+        }
+      }
+    } catch {
+      // API de servidor indisponível (ex: host 100% estático)
+    }
+
+    // 3. Fallback: LocalStorage ou PRODUCTS padrão
     return savedLocal || PRODUCTS;
   },
 
@@ -64,7 +78,7 @@ export const productService = {
       available: newProd.available !== false,
     };
 
-    // Se Supabase estiver configurado, salva no Supabase
+    // 1. Salva no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const dbPayload: DbProduct = {
@@ -89,6 +103,17 @@ export const productService = {
       }
     }
 
+    // 2. Salva na API do Servidor Central Express (/api/products)
+    try {
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product),
+      });
+    } catch {
+      // Ignora erro se servidor estático
+    }
+
     return product;
   },
 
@@ -96,7 +121,7 @@ export const productService = {
    * Atualiza dados de um produto existente no Servidor, Supabase e localStorage
    */
   async updateProduct(id: string, updated: Partial<Product>): Promise<boolean> {
-    // Se Supabase estiver configurado, atualiza/upsert no Supabase
+    // 1. Atualiza no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const dbPayload: Partial<DbProduct> = { id };
@@ -117,6 +142,17 @@ export const productService = {
       }
     }
 
+    // 2. Atualiza na API do Servidor Central Express (/api/products/:id)
+    try {
+      await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+    } catch {
+      // Ignora
+    }
+
     return true;
   },
 
@@ -124,7 +160,7 @@ export const productService = {
    * Remove um produto pelo ID no Servidor e Supabase
    */
   async deleteProduct(id: string): Promise<boolean> {
-    // Deleta no Supabase se configurado
+    // 1. Deleta no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         await (supabase.from('produtos') as any)
@@ -133,6 +169,13 @@ export const productService = {
       } catch (err) {
         console.error('Falha ao deletar produto no Supabase:', err);
       }
+    }
+
+    // 2. Deleta na API do Servidor Central Express (/api/products/:id)
+    try {
+      await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    } catch {
+      // Ignora
     }
 
     return true;
@@ -146,7 +189,6 @@ export const productService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        // Limpa a lista de produtos anterior no Supabase para evitar mistura de itens antigos ao importar backup
         await (supabase.from('produtos') as any)
           .delete()
           .neq('id', '___impossible_id___');
@@ -171,6 +213,17 @@ export const productService = {
       } catch (err) {
         console.error('Erro ao enviar batch de produtos para o Supabase:', err);
       }
+    }
+
+    // Salva também no servidor Express
+    try {
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(products),
+      });
+    } catch {
+      // Ignora
     }
 
     return true;
@@ -204,6 +257,13 @@ export const productService = {
         console.error('Erro ao resetar produtos no Supabase:', err);
       }
     }
+
+    try {
+      await fetch('/api/products/reset', { method: 'POST' });
+    } catch {
+      // Ignora
+    }
+
     return PRODUCTS;
   },
 

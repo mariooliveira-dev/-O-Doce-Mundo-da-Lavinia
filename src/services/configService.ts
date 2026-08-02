@@ -48,6 +48,21 @@ export const configService = {
       }
     }
 
+    // 2. Tenta buscar da API Central Express do Servidor (/api/config)
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const mergedConfig: SiteConfig = { ...DEFAULT_SITE_CONFIG, ...json.data };
+          saveConfigToStorage(mergedConfig);
+          return mergedConfig;
+        }
+      }
+    } catch {
+      // Ignora erro se servidor estático
+    }
+
     return localMergedConfig;
   },
 
@@ -58,7 +73,7 @@ export const configService = {
     // Guarda backup em localStorage para refletir imediatamente
     saveConfigToStorage(config);
 
-    // Salva no Supabase se configurado
+    // 1. Salva no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const payload: DbSiteConfig = {
@@ -81,6 +96,17 @@ export const configService = {
       } catch (err) {
         console.warn('Falha ao atualizar configuracoes no Supabase:', err);
       }
+    }
+
+    // 2. Salva na API Central Express (/api/config)
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+    } catch {
+      // Ignora
     }
 
     return true;

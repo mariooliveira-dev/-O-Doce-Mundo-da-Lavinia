@@ -36,6 +36,7 @@ import { authService } from '../services/authService';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { productService } from '../services/productService';
 import { syncBackupWithSupabase } from '../utils/syncBackupUtility';
+import { SupabaseDiagnosticStatus } from './SupabaseDiagnosticStatus';
 
 export const AdminPanelModal: React.FC = () => {
   const {
@@ -566,6 +567,9 @@ export const AdminPanelModal: React.FC = () => {
                 </div>
 
               </div>
+
+              {/* Componente de Diagnóstico em Tempo Real do Supabase */}
+              <SupabaseDiagnosticStatus />
 
               {/* Status Banner: Multi-device & Cloud Sync Status */}
               <div className={`p-4 rounded-2xl border text-xs space-y-2.5 transition-all ${
