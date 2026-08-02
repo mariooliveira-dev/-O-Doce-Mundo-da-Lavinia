@@ -9,6 +9,8 @@ const supabaseUrl = (
 
 const supabaseAnonKey = (
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_SUP_ANON_KEY ||
+  import.meta.env.VITE_SUPABASE_KEY ||
   import.meta.env.SUPABASE_ANON_KEY ||
   ''
 ).trim();
