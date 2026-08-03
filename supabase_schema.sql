@@ -50,8 +50,12 @@ CREATE TABLE IF NOT EXISTS public.configuracoes (
     founder_title TEXT NOT NULL DEFAULT 'Fundadora & Confeiteira',
     logo_url TEXT DEFAULT '',
     logo_slogan TEXT DEFAULT 'Feito com amor, assado com carinho e servido com gratidão',
+    favicon_url TEXT DEFAULT '',
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Garantir adição da coluna favicon_url caso a tabela já tenha sido criada anteriormente
+ALTER TABLE public.configuracoes ADD COLUMN IF NOT EXISTS favicon_url TEXT;
 
 -- 5. TABELA DE BANNERS
 CREATE TABLE IF NOT EXISTS public.banners (

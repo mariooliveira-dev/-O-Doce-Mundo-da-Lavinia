@@ -10,6 +10,7 @@ export interface SiteConfig {
   founderName: string;
   founderTitle: string;
   logoUrl: string; // Empty string means use default SVG badge
+  faviconUrl: string; // Empty string means use default project favicon (/favicon.svg)
   logoSlogan: string;
   adminPassword: string;
 }
@@ -24,6 +25,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   founderName: 'Lavínia Aguiar',
   founderTitle: 'Fundadora & Confeiteira',
   logoUrl: '',
+  faviconUrl: '',
   logoSlogan: 'Feito com amor, assado com carinho e servido com gratidão',
   adminPassword: '1234',
 };

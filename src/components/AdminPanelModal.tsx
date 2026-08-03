@@ -530,7 +530,7 @@ export const AdminPanelModal: React.FC = () => {
                     }`}
                   >
                     <ImageIcon className="w-4 h-4" />
-                    <span>Logo & Marca</span>
+                    <span>Logo & Favicon</span>
                   </button>
 
                   <button
@@ -1121,24 +1121,30 @@ export const AdminPanelModal: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 3: LOGO & MARCA */}
+              {/* TAB 3: LOGO & FAVICON (IDENTIDADE VISUAL) */}
               {activeTab === 'logo' && (
                 <div className="space-y-6">
                   <div>
                     <h3 className="font-display font-bold text-lg text-[#3D231D]">
-                      Identidade Visual & Logo
+                      Identidade Visual: Logo & Favicon
                     </h3>
                     <p className="text-xs text-[#5C3A21]">
-                      Você pode usar o selo/badge clássico artesanal ou enviar sua própria imagem de logo personalizada.
+                      Gerencie a imagem da Logo oficial (utilizada no cabeçalho, hero e rodapé) e o Favicon exclusivo da aba do navegador de forma 100% independente.
                     </p>
                   </div>
 
-                  <div className="p-6 bg-[#FFF0F3] rounded-2xl border border-[#F4ACB7]/40 space-y-6">
+                  {/* SEÇÃO 1: LOGO DO SITE */}
+                  <div className="p-6 bg-[#FFF0F3] rounded-2xl border border-[#F4ACB7]/40 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-[#F4ACB7]/30 pb-2">
+                      <ImageIcon className="w-5 h-5 text-[#E85D75]" />
+                      <h4 className="font-bold text-sm text-[#3D231D]">1. Logo Principal do Site</h4>
+                      <span className="text-3xs text-gray-500">(Cabeçalho, Hero, Rodapé e Login)</span>
+                    </div>
+
                     <div className="flex flex-col sm:flex-row items-center gap-6">
-                      
                       {/* Logo Preview */}
                       <div className="text-center shrink-0">
-                        <span className="block text-2xs font-bold text-[#5C3A21] mb-2">Prévia Atual:</span>
+                        <span className="block text-2xs font-bold text-[#5C3A21] mb-1.5">Prévia da Logo:</span>
                         {siteConfig.logoUrl ? (
                           <img
                             src={siteConfig.logoUrl}
@@ -1149,28 +1155,28 @@ export const AdminPanelModal: React.FC = () => {
                           <div className="w-28 h-28 rounded-2xl bg-white p-3 border border-pink-300 shadow-md flex flex-col items-center justify-center mx-auto text-center">
                             <span className="font-display font-bold text-xs text-[#3D231D]">O Doce Mundo</span>
                             <span className="font-script text-lg text-[#E85D75]">Mundo</span>
-                            <span className="text-3xs text-gray-500 font-semibold">(Logo SVG Padrão)</span>
+                            <span className="text-3xs text-gray-500 font-semibold">(Selo SVG Padrão)</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Controls */}
+                      {/* Logo Controls */}
                       <div className="flex-1 space-y-3 text-xs w-full">
                         <div>
                           <label className="block font-bold text-[#3D231D] mb-1">
-                            Imagem do Logo Personalizado:
+                            Imagem da Logo (PNG / JPG / SVG / WebP):
                           </label>
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
                               value={siteConfig.logoUrl}
                               onChange={(e) => updateSiteConfig({ logoUrl: e.target.value })}
-                              placeholder="URL da foto da sua logo ou use o botão ->"
+                              placeholder="Cole o link da logo ou envie uma imagem ->"
                               className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
                             />
                             <label className="cursor-pointer px-3 py-2 bg-white border border-[#E85D75] text-[#E85D75] rounded-xl font-bold flex items-center gap-1.5 hover:bg-[#FFE5EC] shrink-0">
                               <Upload className="w-4 h-4" />
-                              <span>Enviar Imagem</span>
+                              <span>Enviar Logo</span>
                               <input
                                 type="file"
                                 accept="image/*"
@@ -1185,9 +1191,9 @@ export const AdminPanelModal: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => updateSiteConfig({ logoUrl: '' })}
-                              className="text-3xs font-bold text-red-500 hover:underline mt-1"
+                              className="text-3xs font-bold text-red-500 hover:underline mt-1 block"
                             >
-                              Remover imagem e voltar para o selo artesanal padrão
+                              Remover logo personalizada e voltar para o selo artesanal padrão
                             </button>
                           )}
                         </div>
@@ -1202,7 +1208,93 @@ export const AdminPanelModal: React.FC = () => {
                           />
                         </div>
                       </div>
+                    </div>
+                  </div>
 
+                  {/* SEÇÃO 2: FAVICON DA ABA DO NAVEGADOR */}
+                  <div className="p-6 bg-white rounded-2xl border border-[#F4ACB7] shadow-sm space-y-4">
+                    <div className="flex items-center justify-between border-b border-[#F4ACB7]/30 pb-2 flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-[#E85D75]" />
+                        <h4 className="font-bold text-sm text-[#3D231D]">2. Favicon Exclusivo da Aba do Navegador</h4>
+                      </div>
+                      <span className="text-3xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        100% Independente da Logo
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                      {/* Favicon Simulated Browser Tab Preview */}
+                      <div className="text-center shrink-0 w-full sm:w-auto">
+                        <span className="block text-2xs font-bold text-[#5C3A21] mb-1.5">Simulação na Aba do Navegador:</span>
+                        <div className="bg-gray-200 p-2 rounded-t-xl max-w-[240px] mx-auto shadow-inner">
+                          <div className="bg-white rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-sm border border-gray-300">
+                            <img
+                              src={siteConfig.faviconUrl || '/favicon.svg'}
+                              alt="Favicon da Aba"
+                              className="w-4 h-4 object-contain rounded-sm"
+                            />
+                            <span className="text-3xs font-semibold text-gray-700 truncate max-w-[140px]">
+                              O Doce Mundo da Lavínia
+                            </span>
+                            <X className="w-3 h-3 text-gray-400 ml-auto shrink-0" />
+                          </div>
+                        </div>
+                        <div className="p-2 bg-pink-50 border border-pink-200 rounded-b-xl max-w-[240px] mx-auto text-center">
+                          <span className="text-3xs font-bold text-[#E85D75]">
+                            {siteConfig.faviconUrl ? '✨ Favicon Personalizado Ativo' : '🧁 Favicon Padrão do Projeto'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Favicon Controls */}
+                      <div className="flex-1 space-y-3 text-xs w-full">
+                        <div>
+                          <label className="block font-bold text-[#3D231D] mb-1">
+                            Enviar Ícone Favicon (Imagem Quadrada em PNG / ICO / SVG):
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={siteConfig.faviconUrl}
+                              onChange={(e) => updateSiteConfig({ faviconUrl: e.target.value })}
+                              placeholder="URL do seu favicon ou envie uma imagem ->"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
+                            />
+                            <label className="cursor-pointer px-3 py-2 bg-[#3D231D] text-white rounded-xl font-bold flex items-center gap-1.5 hover:bg-[#2A1814] shrink-0 shadow">
+                              <Upload className="w-4 h-4 text-[#F4ACB7]" />
+                              <span>Enviar Favicon</span>
+                              <input
+                                type="file"
+                                accept="image/*,.ico"
+                                className="hidden"
+                                onChange={(e) =>
+                                  handleFileUpload(e, (url) => updateSiteConfig({ faviconUrl: url }))
+                                }
+                              />
+                            </label>
+                          </div>
+                          {siteConfig.faviconUrl && (
+                            <button
+                              type="button"
+                              onClick={() => updateSiteConfig({ faviconUrl: '' })}
+                              className="text-3xs font-bold text-red-500 hover:underline mt-1 block"
+                            >
+                              Remover favicon personalizado e voltar para o favicon padrão (/favicon.svg)
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-3xs text-amber-900 space-y-1">
+                          <p className="font-bold flex items-center gap-1">
+                            <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            Dica para um Favicon Perfeito:
+                          </p>
+                          <p>
+                            Envie um ícone quadrado simples (ex: 32x32px, 64x64px ou 512x512px) em formato PNG, ICO ou SVG com fundo transparente. Isso evita que o ícone fique quadrado, cortado ou distorcido na aba dos navegadores (Chrome, Safari, Edge, Celular).
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

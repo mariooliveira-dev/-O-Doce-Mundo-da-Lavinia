@@ -36,6 +36,7 @@ export const configService = {
             founderName: row.founder_name || DEFAULT_SITE_CONFIG.founderName,
             founderTitle: row.founder_title || DEFAULT_SITE_CONFIG.founderTitle,
             logoUrl: row.logo_url ?? DEFAULT_SITE_CONFIG.logoUrl,
+            faviconUrl: row.favicon_url ?? DEFAULT_SITE_CONFIG.faviconUrl,
             logoSlogan: row.logo_slogan || DEFAULT_SITE_CONFIG.logoSlogan,
             adminPassword: DEFAULT_SITE_CONFIG.adminPassword,
           };
@@ -87,12 +88,26 @@ export const configService = {
           founder_name: config.founderName,
           founder_title: config.founderTitle,
           logo_url: config.logoUrl,
+          favicon_url: config.faviconUrl || '',
           logo_slogan: config.logoSlogan,
           updated_at: new Date().toISOString(),
         };
 
-        await (supabase.from('configuracoes') as any)
+        const { error } = await (supabase.from('configuracoes') as any)
           .upsert(payload, { onConflict: 'id' });
+
+        if (error) {
+          if (error.message?.includes('favicon_url') || error.message?.includes('column') || error.message?.includes('schema cache')) {
+            console.warn('⚠️ Coluna "favicon_url" não encontrada na tabela "configuracoes". Executando salvamento sem "favicon_url"...');
+            const fallbackPayload = { ...payload };
+            delete (fallbackPayload as any).favicon_url;
+            await (supabase.from('configuracoes') as any).upsert(fallbackPayload, { onConflict: 'id' });
+          } else {
+            console.error('❌ Erro Supabase ao atualizar configurações:', error.message);
+          }
+        } else {
+          console.log('✅ Configurações salvas no Supabase!');
+        }
       } catch (err) {
         console.warn('Falha ao atualizar configuracoes no Supabase:', err);
       }

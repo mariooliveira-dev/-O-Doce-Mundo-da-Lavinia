@@ -48,6 +48,7 @@ export interface DbSiteConfig {
   founder_title: string;
   logo_url: string;
   logo_slogan: string;
+  favicon_url?: string | null;
   updated_at?: string;
 }
 

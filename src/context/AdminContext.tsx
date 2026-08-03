@@ -85,17 +85,30 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // Dynamic Open Graph & Favicon
+  // Dynamic Open Graph & Favicon (Completely Independent)
   useEffect(() => {
+    // 1. Logo for OG / Twitter social sharing meta tags
     const rawLogo = siteConfig.logoUrl ? siteConfig.logoUrl.trim() : '';
     let logoImageToUse = rawLogo || '/logo-og.svg';
-    let faviconToUse = rawLogo || '/favicon.svg';
 
     if (logoImageToUse.startsWith('/') && typeof window !== 'undefined') {
       logoImageToUse = window.location.origin + logoImageToUse;
     }
+
+    // 2. Favicon for browser tab & bookmark icons (Strictly independent from logoUrl)
+    const rawFavicon = siteConfig.faviconUrl ? siteConfig.faviconUrl.trim() : '';
+    let faviconToUse = rawFavicon || '/favicon.svg';
+
     if (faviconToUse.startsWith('/') && typeof window !== 'undefined') {
       faviconToUse = window.location.origin + faviconToUse;
+    }
+
+    // Cache invalidation string for favicon when custom URL is uploaded/changed
+    if (rawFavicon) {
+      const sep = faviconToUse.includes('?') ? '&' : '?';
+      // Hash key based on URL string + timestamp component for cache busting
+      const cacheBuster = `v=${encodeURIComponent(rawFavicon.slice(-10))}_${Date.now()}`;
+      faviconToUse = `${faviconToUse}${sep}${cacheBuster}`;
     }
 
     const setMetaTag = (selector: string, attr: string, value: string) => {
@@ -126,7 +139,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setLinkTag('icon', 'dynamic-favicon', faviconToUse);
     setLinkTag('apple-touch-icon', 'dynamic-apple-icon', faviconToUse);
-  }, [siteConfig.logoUrl]);
+  }, [siteConfig.logoUrl, siteConfig.faviconUrl]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_AUTH, isLoggedIn ? 'true' : 'false');
