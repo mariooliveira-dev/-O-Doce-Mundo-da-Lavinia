@@ -352,8 +352,12 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 // --- VITE MIDDLEWARE / SPA FALLBACK ---
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const isDisableHmr = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: isDisableHmr ? false : undefined,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
