@@ -11,7 +11,7 @@ export const productService = {
   async fetchProducts(): Promise<Product[]> {
     const savedLocal = getSavedProductsFromStorage();
 
-    // 1. Tenta buscar no Supabase se configurado (prioridade máxima para Vercel)
+    // 1. Tenta buscar no Supabase se configurado (prioridade máxima para Vercel e Produção)
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
@@ -19,28 +19,32 @@ export const productService = {
           .select('*')
           .order('name', { ascending: true });
 
-        if (!error && data && data.length > 0) {
+        if (error) {
+          console.error('❌ Erro Supabase ao buscar produtos:', error.message);
+        } else if (data && data.length > 0) {
           const rows = data as DbProduct[];
           const remoteProducts = rows.map((item: DbProduct): Product => ({
             id: item.id,
             name: item.name,
             category: item.category,
             description: item.description,
-            price: item.price,
+            price: Number(item.price),
             image: item.image,
             badge: item.badge || undefined,
-            rating: item.rating || 5.0,
-            reviewCount: item.review_count || 1,
-            customizable: item.customizable,
+            rating: item.rating ? Number(item.rating) : 5.0,
+            reviewCount: item.review_count ? Number(item.review_count) : 1,
+            customizable: Boolean(item.customizable),
             available: item.available !== false,
             options: item.options || undefined,
           }));
 
           saveProductsToStorage(remoteProducts);
           return remoteProducts;
-        } else if (!error && data && data.length === 0 && savedLocal && savedLocal.length > 0) {
-          // Se a tabela do Supabase estiver vazia, preenche com os produtos locais
-          await this.saveAllProducts(savedLocal);
+        } else if (data && data.length === 0) {
+          console.log('ℹ️ Tabela public.produtos vazia no Supabase. Populando com produtos iniciais...');
+          const initialToSave = savedLocal && savedLocal.length > 0 ? savedLocal : PRODUCTS;
+          await this.saveAllProducts(initialToSave);
+          return initialToSave;
         }
       } catch (err) {
         console.error('Erro ao buscar produtos no Supabase:', err);
@@ -78,7 +82,7 @@ export const productService = {
       available: newProd.available !== false,
     };
 
-    // 1. Salva no Supabase se configurado
+    // 1. Salva no Supabase obrigatoriamente
     if (isSupabaseConfigured && supabase) {
       try {
         const dbPayload: DbProduct = {
@@ -96,10 +100,29 @@ export const productService = {
           options: product.options || null,
         };
 
-        await (supabase.from('produtos') as any)
-          .upsert([dbPayload], { onConflict: 'id' });
+        const { data, error } = await (supabase.from('produtos') as any)
+          .upsert([dbPayload], { onConflict: 'id' })
+          .select();
+
+        if (error) {
+          console.error('❌ Erro de inserção no Supabase:', error.message);
+          // Tenta fallback sem a coluna 'available' caso a tabela do cliente não tenha sido atualizada
+          if (error.message?.includes('available') || error.message?.includes('column')) {
+            const fallbackPayload = { ...dbPayload };
+            delete (fallbackPayload as any).available;
+            const retryRes = await (supabase.from('produtos') as any)
+              .upsert([fallbackPayload], { onConflict: 'id' });
+            if (retryRes.error) {
+              console.error('❌ Retry falhou ao inserir produto no Supabase:', retryRes.error.message);
+            } else {
+              console.log('✅ Produto inserido no Supabase via fallback (sem coluna available):', product.name);
+            }
+          }
+        } else {
+          console.log('✅ Produto salvo com sucesso no Supabase:', product.name, data);
+        }
       } catch (err) {
-        console.error('Falha na inserção no Supabase:', err);
+        console.error('Falha grave na inserção no Supabase:', err);
       }
     }
 
@@ -124,7 +147,7 @@ export const productService = {
     // 1. Atualiza no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
-        const dbPayload: Partial<DbProduct> = { id };
+        const dbPayload: Partial<DbProduct> = { id, updated_at: new Date().toISOString() };
         if (updated.name !== undefined) dbPayload.name = updated.name;
         if (updated.category !== undefined) dbPayload.category = updated.category;
         if (updated.description !== undefined) dbPayload.description = updated.description;
@@ -135,8 +158,22 @@ export const productService = {
         if (updated.available !== undefined) dbPayload.available = updated.available;
         if (updated.options !== undefined) dbPayload.options = updated.options || null;
 
-        await (supabase.from('produtos') as any)
+        const { error } = await (supabase.from('produtos') as any)
           .upsert(dbPayload, { onConflict: 'id' });
+
+        if (error) {
+          console.error('❌ Erro Supabase ao atualizar produto:', error.message);
+          if (error.message?.includes('available') || error.message?.includes('column')) {
+            delete dbPayload.available;
+            const retryRes = await (supabase.from('produtos') as any)
+              .upsert(dbPayload, { onConflict: 'id' });
+            if (retryRes.error) {
+              console.error('❌ Retry falhou ao atualizar produto no Supabase:', retryRes.error.message);
+            }
+          }
+        } else {
+          console.log('✅ Produto atualizado no Supabase ID:', id);
+        }
       } catch (err) {
         console.error('Falha ao atualizar produto no Supabase:', err);
       }
@@ -163,9 +200,15 @@ export const productService = {
     // 1. Deleta no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
-        await (supabase.from('produtos') as any)
+        const { error } = await (supabase.from('produtos') as any)
           .delete()
           .eq('id', id);
+
+        if (error) {
+          console.error('❌ Erro ao deletar produto no Supabase:', error.message);
+        } else {
+          console.log('✅ Produto removido do Supabase ID:', id);
+        }
       } catch (err) {
         console.error('Falha ao deletar produto no Supabase:', err);
       }
@@ -189,10 +232,6 @@ export const productService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await (supabase.from('produtos') as any)
-          .delete()
-          .neq('id', '___impossible_id___');
-
         const dbPayloads: DbProduct[] = products.map((product) => ({
           id: product.id,
           name: product.name,
@@ -206,10 +245,33 @@ export const productService = {
           customizable: Boolean(product.customizable),
           available: product.available !== false,
           options: product.options || null,
+          updated_at: new Date().toISOString(),
         }));
 
-        await (supabase.from('produtos') as any)
+        const { error } = await (supabase.from('produtos') as any)
           .upsert(dbPayloads, { onConflict: 'id' });
+
+        if (error) {
+          if (error.message?.includes('available') || error.message?.includes('column') || error.message?.includes('schema cache')) {
+            console.warn('⚠️ Coluna "available" não encontrada na tabela "produtos". Executando salvamento adaptativo sem "available"...');
+            const fallbackPayloads = dbPayloads.map((p) => {
+              const clone = { ...p };
+              delete (clone as any).available;
+              return clone;
+            });
+            const retryRes = await (supabase.from('produtos') as any)
+              .upsert(fallbackPayloads, { onConflict: 'id' });
+            if (retryRes.error) {
+              console.error('❌ Erro no salvamento adaptativo em lote no Supabase:', retryRes.error.message);
+            } else {
+              console.log('✅ Todos os produtos foram salvos com sucesso no Supabase!');
+            }
+          } else {
+            console.error('❌ Erro no salvamento em lote no Supabase:', error.message);
+          }
+        } else {
+          console.log('✅ Batch de produtos salvo com sucesso no Supabase!');
+        }
       } catch (err) {
         console.error('Erro ao enviar batch de produtos para o Supabase:', err);
       }
@@ -251,8 +313,18 @@ export const productService = {
           options: product.options || null,
         }));
 
-        await (supabase.from('produtos') as any)
+        const { error } = await (supabase.from('produtos') as any)
           .upsert(dbPayloads, { onConflict: 'id' });
+
+        if (error && (error.message?.includes('available') || error.message?.includes('column') || error.message?.includes('schema cache'))) {
+          const fallbackPayloads = dbPayloads.map((p) => {
+            const clone = { ...p };
+            delete (clone as any).available;
+            return clone;
+          });
+          await (supabase.from('produtos') as any)
+            .upsert(fallbackPayloads, { onConflict: 'id' });
+        }
       } catch (err) {
         console.error('Erro ao resetar produtos no Supabase:', err);
       }

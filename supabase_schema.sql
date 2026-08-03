@@ -28,10 +28,14 @@ CREATE TABLE IF NOT EXISTS public.produtos (
     rating NUMERIC(3,2) DEFAULT 5.0,
     review_count INT DEFAULT 1,
     customizable BOOLEAN DEFAULT false,
+    available BOOLEAN DEFAULT true,
     options JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Garantir adição da coluna available caso a tabela já tenha sido criada anteriormente
+ALTER TABLE public.produtos ADD COLUMN IF NOT EXISTS available BOOLEAN DEFAULT true;
 
 -- 4. TABELA DE CONFIGURAÇÕES DO SITE (REGISTRO ÚNICO)
 CREATE TABLE IF NOT EXISTS public.configuracoes (
