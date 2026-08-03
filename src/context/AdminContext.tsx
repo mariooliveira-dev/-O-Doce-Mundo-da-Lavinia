@@ -85,30 +85,13 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // Dynamic Open Graph & Favicon (Completely Independent)
+  // Dynamic Open Graph Logo Meta Tags (Logo and Favicon are completely independent)
   useEffect(() => {
-    // 1. Logo for OG / Twitter social sharing meta tags
     const rawLogo = siteConfig.logoUrl ? siteConfig.logoUrl.trim() : '';
     let logoImageToUse = rawLogo || '/logo-og.svg';
 
     if (logoImageToUse.startsWith('/') && typeof window !== 'undefined') {
       logoImageToUse = window.location.origin + logoImageToUse;
-    }
-
-    // 2. Favicon for browser tab & bookmark icons (Strictly independent from logoUrl)
-    const rawFavicon = siteConfig.faviconUrl ? siteConfig.faviconUrl.trim() : '';
-    let faviconToUse = rawFavicon || '/favicon.svg';
-
-    if (faviconToUse.startsWith('/') && typeof window !== 'undefined') {
-      faviconToUse = window.location.origin + faviconToUse;
-    }
-
-    // Cache invalidation string for favicon when custom URL is uploaded/changed
-    if (rawFavicon) {
-      const sep = faviconToUse.includes('?') ? '&' : '?';
-      // Hash key based on URL string + timestamp component for cache busting
-      const cacheBuster = `v=${encodeURIComponent(rawFavicon.slice(-10))}_${Date.now()}`;
-      faviconToUse = `${faviconToUse}${sep}${cacheBuster}`;
     }
 
     const setMetaTag = (selector: string, attr: string, value: string) => {
@@ -125,21 +108,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setMetaTag('meta[property="og:image"]', 'content', logoImageToUse);
     setMetaTag('meta[name="twitter:image"]', 'content', logoImageToUse);
-
-    const setLinkTag = (rel: string, id: string, hrefVal: string) => {
-      let link: HTMLLinkElement | null = document.querySelector(`link#${id}`);
-      if (!link) {
-        link = document.createElement('link');
-        link.id = id;
-        link.rel = rel;
-        document.head.appendChild(link);
-      }
-      link.href = hrefVal;
-    };
-
-    setLinkTag('icon', 'dynamic-favicon', faviconToUse);
-    setLinkTag('apple-touch-icon', 'dynamic-apple-icon', faviconToUse);
-  }, [siteConfig.logoUrl, siteConfig.faviconUrl]);
+  }, [siteConfig.logoUrl]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_AUTH, isLoggedIn ? 'true' : 'false');

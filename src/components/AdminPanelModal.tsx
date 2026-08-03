@@ -1211,27 +1211,27 @@ export const AdminPanelModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* SEÇÃO 2: FAVICON DA ABA DO NAVEGADOR */}
+                  {/* SEÇÃO 2: FAVICON OFICIAL PERMANENTE DA MARCA */}
                   <div className="p-6 bg-white rounded-2xl border border-[#F4ACB7] shadow-sm space-y-4">
                     <div className="flex items-center justify-between border-b border-[#F4ACB7]/30 pb-2 flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-[#E85D75]" />
-                        <h4 className="font-bold text-sm text-[#3D231D]">2. Favicon Exclusivo da Aba do Navegador</h4>
+                        <h4 className="font-bold text-sm text-[#3D231D]">2. Favicon Oficial Permanente do Projeto</h4>
                       </div>
-                      <span className="text-3xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        100% Independente da Logo
+                      <span className="text-3xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300 flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-600" /> Ativo em /public/ com Versionamento ?v=1
                       </span>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-6">
                       {/* Favicon Simulated Browser Tab Preview */}
                       <div className="text-center shrink-0 w-full sm:w-auto">
-                        <span className="block text-2xs font-bold text-[#5C3A21] mb-1.5">Simulação na Aba do Navegador:</span>
+                        <span className="block text-2xs font-bold text-[#5C3A21] mb-1.5">Visualização na Aba do Navegador:</span>
                         <div className="bg-gray-200 p-2 rounded-t-xl max-w-[240px] mx-auto shadow-inner">
                           <div className="bg-white rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-sm border border-gray-300">
                             <img
-                              src={siteConfig.faviconUrl || '/favicon.svg'}
-                              alt="Favicon da Aba"
+                              src="/favicon-32x32.png?v=1"
+                              alt="Favicon Oficial"
                               className="w-4 h-4 object-contain rounded-sm"
                             />
                             <span className="text-3xs font-semibold text-gray-700 truncate max-w-[140px]">
@@ -1240,60 +1240,26 @@ export const AdminPanelModal: React.FC = () => {
                             <X className="w-3 h-3 text-gray-400 ml-auto shrink-0" />
                           </div>
                         </div>
-                        <div className="p-2 bg-pink-50 border border-pink-200 rounded-b-xl max-w-[240px] mx-auto text-center">
-                          <span className="text-3xs font-bold text-[#E85D75]">
-                            {siteConfig.faviconUrl ? '✨ Favicon Personalizado Ativo' : '🧁 Favicon Padrão do Projeto'}
+                        <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-b-xl max-w-[240px] mx-auto text-center">
+                          <span className="text-3xs font-bold text-emerald-700">
+                            ✨ Favicon Oficial Ativo & Totalmente Protegido
                           </span>
                         </div>
                       </div>
 
-                      {/* Favicon Controls */}
-                      <div className="flex-1 space-y-3 text-xs w-full">
-                        <div>
-                          <label className="block font-bold text-[#3D231D] mb-1">
-                            Enviar Ícone Favicon (Imagem Quadrada em PNG / ICO / SVG):
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={siteConfig.faviconUrl}
-                              onChange={(e) => updateSiteConfig({ faviconUrl: e.target.value })}
-                              placeholder="URL do seu favicon ou envie uma imagem ->"
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-[#F4ACB7]"
-                            />
-                            <label className="cursor-pointer px-3 py-2 bg-[#3D231D] text-white rounded-xl font-bold flex items-center gap-1.5 hover:bg-[#2A1814] shrink-0 shadow">
-                              <Upload className="w-4 h-4 text-[#F4ACB7]" />
-                              <span>Enviar Favicon</span>
-                              <input
-                                type="file"
-                                accept="image/*,.ico"
-                                className="hidden"
-                                onChange={(e) =>
-                                  handleFileUpload(e, (url) => updateSiteConfig({ faviconUrl: url }))
-                                }
-                              />
-                            </label>
-                          </div>
-                          {siteConfig.faviconUrl && (
-                            <button
-                              type="button"
-                              onClick={() => updateSiteConfig({ faviconUrl: '' })}
-                              className="text-3xs font-bold text-red-500 hover:underline mt-1 block"
-                            >
-                              Remover favicon personalizado e voltar para o favicon padrão (/favicon.svg)
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-3xs text-amber-900 space-y-1">
-                          <p className="font-bold flex items-center gap-1">
-                            <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                            Dica para um Favicon Perfeito:
-                          </p>
-                          <p>
-                            Envie um ícone quadrado simples (ex: 32x32px, 64x64px ou 512x512px) em formato PNG, ICO ou SVG com fundo transparente. Isso evita que o ícone fique quadrado, cortado ou distorcido na aba dos navegadores (Chrome, Safari, Edge, Celular).
-                          </p>
-                        </div>
+                      {/* Info Details */}
+                      <div className="flex-1 space-y-2 text-xs text-[#5C3A21]">
+                        <p className="font-bold text-[#3D231D]">
+                          🔒 Gestão Permanente & Independente da Logo:
+                        </p>
+                        <p className="text-3xs text-gray-600 leading-relaxed">
+                          O favicon oficial da marca está salvo permanentemente no diretório de arquivos públicos do projeto (<code className="bg-pink-50 px-1 py-0.5 rounded text-[#E85D75]">/public/</code>) e configurado com cache-busting (<code className="bg-pink-50 px-1 py-0.5 rounded text-[#E85D75]">?v=1</code>) no <code className="bg-pink-50 px-1 py-0.5 rounded text-[#E85D75]">index.html</code>.
+                        </p>
+                        <ul className="text-3xs text-gray-600 list-disc pl-4 space-y-1 font-medium">
+                          <li>Funciona em abas do navegador, favoritos, histórico e atalhos em celulares iOS / Android.</li>
+                          <li>100% independente da imagem da logo principal (alterações na logo no painel jamais afetam o favicon).</li>
+                          <li>Persistência garantida em todos os deploys futuros (Vercel, GitHub, etc.).</li>
+                        </ul>
                       </div>
                     </div>
                   </div>

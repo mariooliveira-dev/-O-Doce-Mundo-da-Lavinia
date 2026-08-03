@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
+
+const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#E85D75" flood-opacity="0.15"/>
@@ -72,4 +76,86 @@
     <!-- Ribbon Text -->
     <text x="0" y="10" text-anchor="middle" font-family="sans-serif" font-size="17" font-weight="600" fill="#3D231D" font-style="italic">Feito com amor para adoçar seus momentos</text>
   </g>
-</svg>
+</svg>`;
+
+const publicDir = path.join(process.cwd(), 'public');
+
+async function buildFavicons() {
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
+
+  // 1. Write favicon.svg
+  fs.writeFileSync(path.join(publicDir, 'favicon.svg'), svgContent);
+  console.log('✅ Generated public/favicon.svg');
+
+  // 2. Generate 16x16 PNG
+  await sharp(Buffer.from(svgContent))
+    .resize(16, 16)
+    .png()
+    .toFile(path.join(publicDir, 'favicon-16x16.png'));
+  console.log('✅ Generated public/favicon-16x16.png');
+
+  // 3. Generate 32x32 PNG
+  await sharp(Buffer.from(svgContent))
+    .resize(32, 32)
+    .png()
+    .toFile(path.join(publicDir, 'favicon-32x32.png'));
+  console.log('✅ Generated public/favicon-32x32.png');
+
+  // 4. Generate favicon.ico (32x32 PNG file saved as .ico for legacy browsers)
+  await sharp(Buffer.from(svgContent))
+    .resize(32, 32)
+    .toFile(path.join(publicDir, 'favicon.ico'));
+  console.log('✅ Generated public/favicon.ico');
+
+  // 5. Generate apple-touch-icon.png (180x180)
+  await sharp(Buffer.from(svgContent))
+    .resize(180, 180)
+    .png()
+    .toFile(path.join(publicDir, 'apple-touch-icon.png'));
+  console.log('✅ Generated public/apple-touch-icon.png');
+
+  // 6. Generate android-chrome-192x192.png
+  await sharp(Buffer.from(svgContent))
+    .resize(192, 192)
+    .png()
+    .toFile(path.join(publicDir, 'android-chrome-192x192.png'));
+  console.log('✅ Generated public/android-chrome-192x192.png');
+
+  // 7. Generate android-chrome-512x512.png
+  await sharp(Buffer.from(svgContent))
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(publicDir, 'android-chrome-512x512.png'));
+  console.log('✅ Generated public/android-chrome-512x512.png');
+
+  // 8. Create site.webmanifest
+  const manifest = {
+    name: 'O Doce Mundo da Lavínia',
+    short_name: 'Doce Mundo',
+    icons: [
+      {
+        src: '/android-chrome-192x192.png?v=1',
+        sizes: '192x192',
+        type: 'image/png'
+      },
+      {
+        src: '/android-chrome-512x512.png?v=1',
+        sizes: '512x512',
+        type: 'image/png'
+      }
+    ],
+    theme_color: '#FFF5F7',
+    background_color: '#FFF5F7',
+    display: 'standalone'
+  };
+
+  fs.writeFileSync(path.join(publicDir, 'site.webmanifest'), JSON.stringify(manifest, null, 2));
+  console.log('✅ Generated public/site.webmanifest');
+}
+
+buildFavicons().catch((err) => {
+  console.error('❌ Build failed:', err);
+  process.exit(1);
+});

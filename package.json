@@ -21,8 +21,10 @@
     "framer-motion": "^12.43.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "pngjs": "^7.0.0",
     "react": "^19.0.1",
-    "react-dom": "^19.0.1"
+    "react-dom": "^19.0.1",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
