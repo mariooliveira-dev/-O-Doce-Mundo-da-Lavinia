@@ -11,6 +11,34 @@
     <meta name="keywords" content="confeitaria, doces artesanais, bentô cake, bolo vulcão, cupcakes, docinhos de festa, Lavínia Aguiar" />
     
     <!-- Favicon -->
+    <script>
+      // Silencia erros benignos do WebSocket do Vite no ambiente de preview
+      window.addEventListener('unhandledrejection', function (e) {
+        if (
+          e.reason &&
+          (e.reason.message?.includes('WebSocket closed') ||
+           String(e.reason).includes('WebSocket closed'))
+        ) {
+          e.preventDefault();
+        }
+      });
+      (function () {
+        const origError = console.error;
+        console.error = function (...args) {
+          if (
+            args.some(
+              (arg) =>
+                typeof arg === 'string' &&
+                (arg.includes('[vite] failed to connect to websocket') ||
+                 arg.includes('WebSocket closed'))
+            )
+          ) {
+            return;
+          }
+          origError.apply(console, args);
+        };
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" id="dynamic-favicon" />
     <link rel="apple-touch-icon" href="/favicon.svg" id="dynamic-apple-icon" />
 
