@@ -1,19 +1,7 @@
-import { Product } from '../types';
+import { Product, SiteConfig } from '../types';
 import { purgeObsoleteLocalCache, safeSetLocalCache, sanitizeProductsForLocalCache } from './cacheManager';
 
-export interface SiteConfig {
-  phoneDisplay: string;
-  phoneRaw: string;
-  profileImage: string;
-  profileBio1: string;
-  profileBio2: string;
-  profileBio3: string;
-  founderName: string;
-  founderTitle: string;
-  logoUrl: string;
-  logoSlogan: string;
-  adminPassword: string;
-}
+export type { SiteConfig };
 
 export const STORAGE_KEY_CONFIG = 'docemundo_site_config_v1';
 export const STORAGE_KEY_PRODUCTS = 'docemundo_products_v1';

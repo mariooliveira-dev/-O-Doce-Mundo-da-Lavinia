@@ -1,20 +1,21 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Product } from '../types';
-import { SiteConfig, DEFAULT_SITE_CONFIG } from '../context/AdminContext';
+import { SiteConfig, DEFAULT_SITE_CONFIG } from '../types';
 import { productService } from '../services/productService';
 import { configService } from '../services/configService';
 import { getSavedProductsFromStorage, getSavedConfigFromStorage, saveProductsToStorage, saveConfigToStorage } from '../utils/storage';
 import { PRODUCTS } from '../data/products';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-
-export const QUERY_KEY_MENU_PRODUCTS = ['menu', 'products'] as const;
-export const QUERY_KEY_MENU_CONFIG = ['menu', 'config'] as const;
+export const QUERY_KEY_PRODUCTS = ['products'] as const;
+export const QUERY_KEY_CONFIG = ['siteConfig'] as const;
+export const QUERY_KEY_MENU_PRODUCTS = QUERY_KEY_PRODUCTS;
+export const QUERY_KEY_MENU_CONFIG = QUERY_KEY_CONFIG;
 
 export interface UseMenuDataOptions {
   /**
    * Tempo em milissegundos que os dados são considerados recentes (staleTime).
-   * Padrão inteligente: 10 segundos (mantém performance sem fazer chamadas excessivas, mas revalida rapidamente ao trocar de abas/dispositivos).
+   * Padrão reativo: 2 segundos para garantir sincronização instantânea em múltiplos aparelhos.
    */
   staleTime?: number;
   /**
@@ -25,15 +26,15 @@ export interface UseMenuDataOptions {
 
 /**
  * Hook customizado 'useMenuData' que utiliza 'useQuery' do React Query
- * para buscar os dados do cardápio diretamente do Supabase com estratégia de staleTime inteligente.
+ * para buscar os dados do cardápio diretamente do Supabase com estratégia de sincronização em tempo real.
  */
 export function useMenuData(options: UseMenuDataOptions = {}) {
-  const { staleTime = 1000 * 10, enableRealtime = true } = options;
+  const { staleTime = 1000 * 2, enableRealtime = true } = options;
   const queryClient = useQueryClient();
 
   // 1. Query para os produtos do cardápio
   const productsQuery = useQuery<Product[]>({
-    queryKey: QUERY_KEY_MENU_PRODUCTS,
+    queryKey: QUERY_KEY_PRODUCTS,
     queryFn: async () => {
       // Busca diretamente do Supabase / backend remoto
       const remoteProducts = await productService.fetchProducts();
@@ -55,12 +56,13 @@ export function useMenuData(options: UseMenuDataOptions = {}) {
     gcTime: 1000 * 60 * 60, // 1 hora na memória
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    refetchInterval: 15000,
+    refetchOnReconnect: true,
+    refetchInterval: 10000, // Polling a cada 10s para clientes sem websocket
   });
 
   // 2. Query para as configurações do cardápio/loja
   const configQuery = useQuery<SiteConfig>({
-    queryKey: QUERY_KEY_MENU_CONFIG,
+    queryKey: QUERY_KEY_CONFIG,
     queryFn: async () => {
       const remoteConfig = await configService.fetchSiteConfig();
       if (remoteConfig) {
@@ -84,8 +86,27 @@ export function useMenuData(options: UseMenuDataOptions = {}) {
     gcTime: 1000 * 60 * 60,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    refetchInterval: 15000,
+    refetchOnReconnect: true,
+    refetchInterval: 10000,
   });
+
+  // Listener para revalidação ao alternar abas/focar tela no celular
+  useEffect(() => {
+    const handleFocusOrVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        productsQuery.refetch();
+        configQuery.refetch();
+      }
+    };
+
+    window.addEventListener('focus', handleFocusOrVisibility);
+    document.addEventListener('visibilitychange', handleFocusOrVisibility);
+
+    return () => {
+      window.removeEventListener('focus', handleFocusOrVisibility);
+      document.removeEventListener('visibilitychange', handleFocusOrVisibility);
+    };
+  }, [productsQuery, configQuery]);
 
   // Inscrição em tempo real com o Supabase Realtime para sincronizar instantaneamente entre celular e PC
   useEffect(() => {
@@ -94,14 +115,14 @@ export function useMenuData(options: UseMenuDataOptions = {}) {
     const productsChannel = supabase
       .channel('menu_data_products_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => {
-        queryClient.invalidateQueries({ queryKey: QUERY_KEY_MENU_PRODUCTS });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
       })
       .subscribe();
 
     const configChannel = supabase
       .channel('menu_data_config_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'configuracoes' }, () => {
-        queryClient.invalidateQueries({ queryKey: QUERY_KEY_MENU_CONFIG });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEY_CONFIG });
       })
       .subscribe();
 

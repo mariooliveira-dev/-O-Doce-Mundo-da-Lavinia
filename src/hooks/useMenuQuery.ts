@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Product } from '../types';
-import { SiteConfig, DEFAULT_SITE_CONFIG } from '../context/AdminContext';
+import { SiteConfig, DEFAULT_SITE_CONFIG } from '../types';
 import { productService } from '../services/productService';
 import { configService } from '../services/configService';
 import { getSavedProductsFromStorage, getSavedConfigFromStorage, saveProductsToStorage, saveConfigToStorage } from '../utils/storage';
@@ -129,6 +129,4 @@ export function useSiteConfigQuery() {
     invalidateConfig: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY_CONFIG }),
   };
 }
-
-export { useMenuData } from './useMenuData';
 

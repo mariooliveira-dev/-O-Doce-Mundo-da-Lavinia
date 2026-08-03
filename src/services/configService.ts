@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { SiteConfig, DEFAULT_SITE_CONFIG } from '../context/AdminContext';
+import { SiteConfig, DEFAULT_SITE_CONFIG } from '../types';
 import { DbSiteConfig } from '../types/database';
 import { getSavedConfigFromStorage, saveConfigToStorage } from '../utils/storage';
 

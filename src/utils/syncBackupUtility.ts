@@ -5,7 +5,7 @@ import { productService } from '../services/productService';
 import { configService } from '../services/configService';
 import { saveProductsToStorage, saveConfigToStorage, getSavedProductsFromStorage, getSavedConfigFromStorage } from './storage';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { DEFAULT_SITE_CONFIG } from '../context/AdminContext';
+import { DEFAULT_SITE_CONFIG } from '../types';
 
 export interface SyncResult {
   success: boolean;
