@@ -21,30 +21,56 @@
 
     <!-- Script de suporte do Vite em dev -->
     <script>
-      // Silencia avisos de conexão do Vite HMR no ambiente de sandbox
+      // Silencia avisos de conexão do Vite HMR/WebSocket no ambiente de sandbox
       window.addEventListener('unhandledrejection', function (e) {
-        if (
-          e.reason &&
-          (e.reason.message?.includes('WebSocket closed') ||
-           String(e.reason).includes('WebSocket closed'))
-        ) {
-          e.preventDefault();
+        var str = '';
+        if (e && e.reason) {
+          str = typeof e.reason === 'string' ? e.reason : (e.reason.message || String(e.reason));
         }
-      });
+        if (str.toLowerCase().includes('websocket') || str.toLowerCase().includes('vite')) {
+          e.preventDefault();
+          if (e.stopPropagation) e.stopPropagation();
+          return false;
+        }
+      }, true);
+
+      window.addEventListener('error', function (e) {
+        var msg = e && e.message ? String(e.message) : '';
+        if (msg.toLowerCase().includes('websocket') || msg.toLowerCase().includes('vite')) {
+          e.preventDefault();
+          if (e.stopPropagation) e.stopPropagation();
+          return false;
+        }
+      }, true);
+
       (function () {
         const origError = console.error;
+        const origWarn = console.warn;
         console.error = function (...args) {
           if (
             args.some(
               (arg) =>
                 typeof arg === 'string' &&
-                (arg.includes('[vite] failed to connect to websocket') ||
-                 arg.includes('WebSocket closed'))
+                (arg.toLowerCase().includes('websocket') ||
+                 arg.toLowerCase().includes('[vite]'))
             )
           ) {
             return;
           }
           origError.apply(console, args);
+        };
+        console.warn = function (...args) {
+          if (
+            args.some(
+              (arg) =>
+                typeof arg === 'string' &&
+                (arg.toLowerCase().includes('websocket') ||
+                 arg.toLowerCase().includes('[vite]'))
+            )
+          ) {
+            return;
+          }
+          origWarn.apply(console, args);
         };
       })();
     </script>

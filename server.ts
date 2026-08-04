@@ -3,12 +3,34 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
+import rateLimit from 'express-rate-limit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
+
+// Rate limiting para mitigar ataques DoS / Brute-Force
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // limite de 100 requisições por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Muitas requisições originadas deste IP. Tente novamente mais tarde.' },
+});
+
+const authUploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 15, // limite restrito de 15 chamadas sensíveis
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Muitas tentativas em rotas sensíveis. Aguarde 15 minutos.' },
+});
+
+app.use('/api', apiLimiter);
+app.use('/api/admin/login', authUploadLimiter);
+app.use('/api/upload', authUploadLimiter);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -306,7 +328,8 @@ app.post('/api/products/reset', (_req, res) => {
     writeDb({ products: DEFAULT_PRODUCTS });
     res.json({ success: true, data: DEFAULT_PRODUCTS });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'Erro ao restaurar produtos' });
+    console.error('Erro ao restaurar produtos:', err);
+    res.status(500).json({ success: false, error: 'Ocorreu um erro interno ao processar a requisição.' });
   }
 });
 
@@ -342,7 +365,8 @@ app.post('/api/upload', (req, res) => {
     const publicUrl = `/uploads/${safeFilename}`;
     res.json({ success: true, url: publicUrl });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'Erro ao salvar imagem no servidor' });
+    console.error('Erro ao salvar imagem no servidor:', err);
+    res.status(500).json({ success: false, error: 'Erro interno ao processar o upload da imagem.' });
   }
 });
 
@@ -352,11 +376,12 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 // --- VITE MIDDLEWARE / SPA FALLBACK ---
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
-    const isDisableHmr = process.env.DISABLE_HMR === 'true';
+    const isDisableHmr = process.env.DISABLE_HMR === 'true' || true;
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
         hmr: isDisableHmr ? false : undefined,
+        ws: isDisableHmr ? false : undefined,
       },
       appType: 'spa',
     });
