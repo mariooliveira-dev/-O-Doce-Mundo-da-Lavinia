@@ -143,11 +143,11 @@ export const productService = {
   /**
    * Atualiza dados de um produto existente no Servidor, Supabase e localStorage
    */
-  async updateProduct(id: string, updated: Partial<Product>): Promise<boolean> {
+  async updateProduct(id: string, updated: Partial<Product>, fullProduct?: Product): Promise<boolean> {
     // 1. Atualiza no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
-        const dbPayload: Partial<DbProduct> = { id, updated_at: new Date().toISOString() };
+        const dbPayload: Record<string, any> = { updated_at: new Date().toISOString() };
         if (updated.name !== undefined) dbPayload.name = updated.name;
         if (updated.category !== undefined) dbPayload.category = updated.category;
         if (updated.description !== undefined) dbPayload.description = updated.description;
@@ -158,17 +158,46 @@ export const productService = {
         if (updated.available !== undefined) dbPayload.available = updated.available;
         if (updated.options !== undefined) dbPayload.options = updated.options || null;
 
-        const { error } = await (supabase.from('produtos') as any)
-          .upsert(dbPayload, { onConflict: 'id' });
+        // Tenta UPDATE direto no Supabase para alterar apenas os campos fornecidos sem violar NOT NULL
+        let { error, count } = await (supabase.from('produtos') as any)
+          .update(dbPayload)
+          .eq('id', id);
 
-        if (error) {
-          console.error('❌ Erro Supabase ao atualizar produto:', error.message);
-          if (error.message?.includes('available') || error.message?.includes('column')) {
-            delete dbPayload.available;
-            const retryRes = await (supabase.from('produtos') as any)
-              .upsert(dbPayload, { onConflict: 'id' });
-            if (retryRes.error) {
-              console.error('❌ Retry falhou ao atualizar produto no Supabase:', retryRes.error.message);
+        if (error && (error.message?.includes('available') || error.message?.includes('column'))) {
+          delete dbPayload.available;
+          const retryRes = await (supabase.from('produtos') as any)
+            .update(dbPayload)
+            .eq('id', id);
+          if (!retryRes.error) error = null;
+        }
+
+        // Se o produto não existia no Supabase ou se o update falhou, faz UPSERT completo com todos os campos
+        if (error || fullProduct) {
+          if (fullProduct) {
+            const fullDbPayload: DbProduct = {
+              id: fullProduct.id || id,
+              name: fullProduct.name,
+              category: fullProduct.category,
+              description: fullProduct.description,
+              price: fullProduct.price,
+              image: fullProduct.image,
+              badge: fullProduct.badge || null,
+              rating: fullProduct.rating || 5.0,
+              review_count: fullProduct.reviewCount || 1,
+              customizable: Boolean(fullProduct.customizable),
+              available: fullProduct.available !== false,
+              options: fullProduct.options || null,
+              updated_at: new Date().toISOString(),
+            };
+
+            const upsertRes = await (supabase.from('produtos') as any)
+              .upsert([fullDbPayload], { onConflict: 'id' });
+
+            if (upsertRes.error && (upsertRes.error.message?.includes('available') || upsertRes.error.message?.includes('column'))) {
+              const fallbackPayload = { ...fullDbPayload };
+              delete (fallbackPayload as any).available;
+              await (supabase.from('produtos') as any)
+                .upsert([fallbackPayload], { onConflict: 'id' });
             }
           }
         } else {
@@ -200,9 +229,17 @@ export const productService = {
     // 1. Deleta no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await (supabase.from('produtos') as any)
+        let { error } = await (supabase.from('produtos') as any)
           .delete()
           .eq('id', id);
+
+        // Se id for numérico (ex: "1"), tenta deletar também por número se houve erro
+        if (error && !isNaN(Number(id))) {
+          const retry = await (supabase.from('produtos') as any)
+            .delete()
+            .eq('id', Number(id));
+          if (!retry.error) error = null;
+        }
 
         if (error) {
           console.error('❌ Erro ao deletar produto no Supabase:', error.message);

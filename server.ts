@@ -30,7 +30,6 @@ const authUploadLimiter = rateLimit({
 
 app.use('/api', apiLimiter);
 app.use('/api/admin/login', authUploadLimiter);
-app.use('/api/upload', authUploadLimiter);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -293,9 +292,13 @@ app.put('/api/products/:id', (req, res) => {
     const updates = req.body;
     const db = readDb();
 
-    const existingIndex = db.products.findIndex((p: any) => p.id === id);
+    const existingIndex = db.products.findIndex((p: any) => String(p.id) === String(id));
     if (existingIndex === -1) {
-      res.status(404).json({ success: false, error: 'Produto não encontrado' });
+      // If product doesn't exist yet, insert it
+      const newProduct = { ...updates, id };
+      db.products.push(newProduct);
+      writeDb({ products: db.products });
+      res.json({ success: true, data: newProduct });
       return;
     }
 
@@ -314,7 +317,7 @@ app.delete('/api/products/:id', (req, res) => {
   try {
     const { id } = req.params;
     const db = readDb();
-    const updatedProducts = db.products.filter((p: any) => p.id !== id);
+    const updatedProducts = db.products.filter((p: any) => String(p.id) !== String(id));
     writeDb({ products: updatedProducts });
     res.json({ success: true, data: updatedProducts });
   } catch (err: any) {

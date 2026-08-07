@@ -98,6 +98,8 @@ export const AdminPanelModal: React.FC = () => {
   const [editDescription, setEditDescription] = useState<string>('');
   const [editBadge, setEditBadge] = useState<string>('');
   const [editAvailable, setEditAvailable] = useState<boolean>(true);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   // Cloud Sync & Vercel Tutorial State
   const [showVercelTutorial, setShowVercelTutorial] = useState(false);
@@ -220,19 +222,37 @@ export const AdminPanelModal: React.FC = () => {
     }
   };
 
+  const parsePrice = (raw: string, fallback = 0): number => {
+    if (!raw) return fallback;
+    // Cleans currency symbol "R$", spaces, and replaces comma with dot
+    const clean = raw.replace(/[^\d.,]/g, '').replace(',', '.');
+    const parsed = parseFloat(clean);
+    return !isNaN(parsed) && parsed >= 0 ? parsed : fallback;
+  };
+
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     onSuccess: (url: string) => void
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('A imagem é muito grande. Escolha uma foto de até 5MB.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('A imagem é muito grande. Escolha uma foto de até 10MB.');
         return;
       }
-      const url = await uploadImage(file);
-      if (url) {
-        onSuccess(url);
+      setIsUploadingPhoto(true);
+      try {
+        const url = await uploadImage(file);
+        if (url) {
+          onSuccess(url);
+        } else {
+          alert('Não foi possível processar a imagem. Tente uma foto menor ou insira um link direto.');
+        }
+      } catch (err) {
+        console.error('Erro no upload de foto:', err);
+        alert('Ocorreu um erro ao enviar a foto.');
+      } finally {
+        setIsUploadingPhoto(false);
       }
     }
   };
@@ -247,42 +267,62 @@ export const AdminPanelModal: React.FC = () => {
     setEditAvailable(prod.available !== false);
   };
 
-  const saveEditedProduct = (id: string) => {
-    const priceNum = parseFloat(editPrice.replace(',', '.'));
-    updateProduct(id, {
-      name: editName,
-      price: isNaN(priceNum) ? 0 : priceNum,
-      image: editImage,
-      description: editDescription,
-      badge: editBadge || undefined,
-      available: editAvailable,
-    });
-    setEditingProductId(null);
+  const saveEditedProduct = async (id: string) => {
+    const existingProd = products.find((p) => p.id === id);
+    const finalPrice = parsePrice(editPrice, existingProd?.price || 0);
+
+    setIsSavingProduct(true);
+    try {
+      await updateProduct(id, {
+        name: editName.trim() || existingProd?.name || 'Doce sem nome',
+        price: finalPrice,
+        image: editImage.trim() || existingProd?.image || '',
+        description: editDescription.trim() || existingProd?.description || '',
+        badge: editBadge.trim() || undefined,
+        available: editAvailable,
+      });
+    } catch (err) {
+      console.error('Erro ao salvar edições do produto:', err);
+    } finally {
+      setIsSavingProduct(false);
+      setEditingProductId(null);
+    }
   };
 
-  const handleSaveNewProduct = (e: React.FormEvent) => {
+  const handleSaveNewProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProdName || !newProdPrice) return;
+    if (!newProdName.trim() || !newProdPrice.trim()) {
+      alert('Por favor, informe o nome e o preço do produto.');
+      return;
+    }
 
-    const priceNum = parseFloat(newProdPrice.replace(',', '.'));
-    addProduct({
-      name: newProdName,
-      category: newProdCategory,
-      price: isNaN(priceNum) ? 0 : priceNum,
-      description: newProdDescription || 'Doce artesanal feito com carinho pela Lavínia.',
-      image: newProdImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
-      badge: newProdBadge || undefined,
-      available: newProdAvailable,
-    });
+    const finalPrice = parsePrice(newProdPrice, 0);
 
-    // Reset new product form
-    setNewProdName('');
-    setNewProdPrice('');
-    setNewProdDescription('');
-    setNewProdImage('');
-    setNewProdBadge('');
-    setNewProdAvailable(true);
-    setIsAddingProduct(false);
+    setIsSavingProduct(true);
+    try {
+      await addProduct({
+        name: newProdName.trim(),
+        category: newProdCategory,
+        price: finalPrice,
+        description: newProdDescription.trim() || 'Doce artesanal feito com carinho pela Lavínia.',
+        image: newProdImage.trim() || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
+        badge: newProdBadge.trim() || undefined,
+        available: newProdAvailable,
+      });
+
+      // Reset new product form
+      setNewProdName('');
+      setNewProdPrice('');
+      setNewProdDescription('');
+      setNewProdImage('');
+      setNewProdBadge('');
+      setNewProdAvailable(true);
+      setIsAddingProduct(false);
+    } catch (err) {
+      console.error('Erro ao cadastrar novo doce:', err);
+    } finally {
+      setIsSavingProduct(false);
+    }
   };
 
   return (
@@ -859,7 +899,11 @@ export const AdminPanelModal: React.FC = () => {
                               />
                               {isEditing && (
                                 <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center text-white cursor-pointer opacity-90 hover:opacity-100">
-                                  <Camera className="w-5 h-5" />
+                                  {isUploadingPhoto ? (
+                                    <RefreshCw className="w-5 h-5 animate-spin text-pink-300" />
+                                  ) : (
+                                    <Camera className="w-5 h-5" />
+                                  )}
                                   <input
                                     type="file"
                                     accept="image/*"

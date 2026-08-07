@@ -183,10 +183,13 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateProduct = async (id: string, updated: Partial<Product>) => {
+    const existingProd = products.find((p) => p.id === id);
+    const mergedProd = existingProd ? { ...existingProd, ...updated } : (updated as Product);
     const newProducts = products.map((p) => (p.id === id ? { ...p, ...updated } : p));
+
     queryClient.setQueryData(QUERY_KEY_PRODUCTS, newProducts);
     saveProductsToStorage(newProducts);
-    await productService.updateProduct(id, updated);
+    await productService.updateProduct(id, updated, mergedProd);
     queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
   };
 
