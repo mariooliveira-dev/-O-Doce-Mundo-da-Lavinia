@@ -285,8 +285,8 @@ app.post('/api/products', (req, res) => {
   }
 });
 
-// PUT Single Product Update
-app.put('/api/products/:id', (req, res) => {
+// PUT or POST Single Product Update
+const handleProductUpdate = (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -310,7 +310,10 @@ app.put('/api/products/:id', (req, res) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Erro ao atualizar produto' });
   }
-});
+};
+
+app.put('/api/products/:id', handleProductUpdate);
+app.post('/api/products/:id', handleProductUpdate);
 
 // DELETE Single Product
 app.delete('/api/products/:id', (req, res) => {
