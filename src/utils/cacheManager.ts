@@ -59,7 +59,9 @@ export const safeSetLocalCache = (key: string, data: any): boolean => {
       if (Array.isArray(data)) {
         const minimal = data.map((item) => ({
           ...item,
-          image: typeof item.image === 'string' && item.image.startsWith('data:') ? '' : item.image,
+          image: typeof item.image === 'string' && item.image.startsWith('data:')
+            ? (item.image.length < 50000 ? item.image : 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80')
+            : (item.image || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80'),
         }));
         localStorage.setItem(key, JSON.stringify(minimal));
         return true;

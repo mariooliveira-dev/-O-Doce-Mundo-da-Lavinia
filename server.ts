@@ -285,7 +285,7 @@ app.post('/api/products', (req, res) => {
   }
 });
 
-// PUT or POST Single Product Update
+// PUT, POST or PATCH Single Product Update
 const handleProductUpdate = (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
@@ -314,11 +314,16 @@ const handleProductUpdate = (req: express.Request, res: express.Response) => {
 
 app.put('/api/products/:id', handleProductUpdate);
 app.post('/api/products/:id', handleProductUpdate);
+app.patch('/api/products/:id', handleProductUpdate);
 
-// DELETE Single Product
-app.delete('/api/products/:id', (req, res) => {
+// DELETE Single Product (handles DELETE and POST fallbacks)
+const handleProductDelete = (req: express.Request, res: express.Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id || req.body?.id;
+    if (!id) {
+      res.status(400).json({ success: false, error: 'ID do produto não informado' });
+      return;
+    }
     const db = readDb();
     const updatedProducts = db.products.filter((p: any) => String(p.id) !== String(id));
     writeDb({ products: updatedProducts });
@@ -326,7 +331,12 @@ app.delete('/api/products/:id', (req, res) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Erro ao deletar produto' });
   }
-});
+};
+
+app.delete('/api/products/:id', handleProductDelete);
+app.post('/api/products/delete/:id', handleProductDelete);
+app.post('/api/products/:id/delete', handleProductDelete);
+app.post('/api/products/delete', handleProductDelete);
 
 // POST Reset Products to Defaults
 app.post('/api/products/reset', (_req, res) => {

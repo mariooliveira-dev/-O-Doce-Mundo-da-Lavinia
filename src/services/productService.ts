@@ -2,7 +2,13 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Product } from '../types';
 import { PRODUCTS } from '../data/products';
 import { DbProduct, DbCategory } from '../types/database';
-import { getSavedProductsFromStorage, saveProductsToStorage } from '../utils/storage';
+import {
+  getSavedProductsFromStorage,
+  saveProductsToStorage,
+  getDeletedProductIds,
+  addDeletedProductId,
+  clearDeletedProductIds,
+} from '../utils/storage';
 
 export const productService = {
   /**
@@ -10,8 +16,9 @@ export const productService = {
    */
   async fetchProducts(): Promise<Product[]> {
     const savedLocal = getSavedProductsFromStorage();
+    const deletedSet = getDeletedProductIds();
 
-    // 1. Tenta buscar no Supabase se configurado (prioridade máxima para Vercel e Produção)
+    // 1. Tenta buscar no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
@@ -19,35 +26,35 @@ export const productService = {
           .select('*')
           .order('name', { ascending: true });
 
-        if (error) {
-          console.error('❌ Erro Supabase ao buscar produtos:', error.message);
-        } else if (data && data.length > 0) {
+        if (!error && data && data.length > 0) {
           const rows = data as DbProduct[];
-          const remoteProducts = rows.map((item: DbProduct): Product => ({
-            id: item.id,
-            name: item.name,
-            category: item.category,
-            description: item.description,
-            price: Number(item.price),
-            image: item.image,
-            badge: item.badge || undefined,
-            rating: item.rating ? Number(item.rating) : 5.0,
-            reviewCount: item.review_count ? Number(item.review_count) : 1,
-            customizable: Boolean(item.customizable),
-            available: item.available !== false,
-            options: item.options || undefined,
-          }));
+          const remoteProducts = rows
+            .map((item: DbProduct): Product => ({
+              id: item.id,
+              name: item.name,
+              category: item.category,
+              description: item.description,
+              price: Number(item.price),
+              image: item.image,
+              badge: item.badge || undefined,
+              rating: item.rating ? Number(item.rating) : 5.0,
+              reviewCount: item.review_count ? Number(item.review_count) : 1,
+              customizable: Boolean(item.customizable),
+              available: item.available !== false,
+              options: item.options || undefined,
+            }))
+            .filter((p) => !deletedSet.has(String(p.id)));
 
           saveProductsToStorage(remoteProducts);
           return remoteProducts;
-        } else if (data && data.length === 0) {
+        } else if (!error && data && data.length === 0 && deletedSet.size === 0) {
           console.log('ℹ️ Tabela public.produtos vazia no Supabase. Populando com produtos iniciais...');
           const initialToSave = savedLocal && savedLocal.length > 0 ? savedLocal : PRODUCTS;
           await this.saveAllProducts(initialToSave);
           return initialToSave;
         }
       } catch (err) {
-        console.error('Erro ao buscar produtos no Supabase:', err);
+        console.warn('Supabase indisponível no momento. Utilizando cache/servidor local.', err);
       }
     }
 
@@ -56,17 +63,19 @@ export const productService = {
       const res = await fetch('/api/products');
       if (res.ok) {
         const json = await res.json();
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          saveProductsToStorage(json.data);
-          return json.data;
+        if (json.success && Array.isArray(json.data)) {
+          const filtered = json.data.filter((p: Product) => !deletedSet.has(String(p.id)));
+          saveProductsToStorage(filtered);
+          return filtered;
         }
       }
     } catch {
       // API de servidor indisponível (ex: host 100% estático)
     }
 
-    // 3. Fallback: LocalStorage ou PRODUCTS padrão
-    return savedLocal || PRODUCTS;
+    // 3. Fallback: LocalStorage ou PRODUCTS padrão (filtrando itens excluídos)
+    const fallbackList = savedLocal !== null ? savedLocal : PRODUCTS;
+    return fallbackList.filter((p) => !deletedSet.has(String(p.id)));
   },
 
   /**
@@ -211,28 +220,37 @@ export const productService = {
   },
 
   /**
-   * Remove um produto pelo ID no Servidor e Supabase
+   * Remove um produto pelo ID no Servidor, Supabase e localStorage
    */
   async deleteProduct(id: string): Promise<boolean> {
-    // 1. Deleta no Supabase se configurado
+    // 1. Registra o ID como deletado de forma persistente
+    addDeletedProductId(id);
+
+    // 2. Remove do localStorage imediatamente
+    const currentList = getSavedProductsFromStorage() || PRODUCTS;
+    const updatedList = currentList.filter((p) => String(p.id) !== String(id));
+    saveProductsToStorage(updatedList);
+
+    // 3. Deleta no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
-        let { error } = await (supabase.from('produtos') as any)
+        await (supabase.from('produtos') as any)
           .delete()
           .eq('id', id);
 
-        if (error && !isNaN(Number(id))) {
+        if (!isNaN(Number(id))) {
           await (supabase.from('produtos') as any)
             .delete()
             .eq('id', Number(id));
         }
       } catch (err) {
-        console.error('Falha ao deletar produto no Supabase:', err);
+        console.warn('Aviso ao deletar produto no Supabase:', err);
       }
     }
 
-    // 2. Deleta na API do Servidor Central Express (/api/products/:id)
+    // 4. Deleta na API do Servidor Central Express com método DELETE e POST fallback
     try {
+      await fetch(`/api/products/delete/${id}`, { method: 'POST' });
       await fetch(`/api/products/${id}`, { method: 'DELETE' });
     } catch {
       // Ignora
@@ -312,6 +330,7 @@ export const productService = {
    * Restaura os produtos para a lista padrão no servidor
    */
   async resetProducts(): Promise<Product[]> {
+    clearDeletedProductIds();
     saveProductsToStorage(PRODUCTS);
     if (isSupabaseConfigured && supabase) {
       try {
