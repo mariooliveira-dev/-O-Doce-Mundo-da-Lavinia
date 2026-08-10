@@ -48,6 +48,27 @@ export async function compressImageFile(file: File, maxWidth = 1000, maxHeight =
   });
 }
 
+/**
+ * Converte de forma síncrona uma string Base64 Data-URL em um objeto Blob bem-formado,
+ * prevenindo falhas no fetch() e erros 400 em uploads no Supabase Storage.
+ */
+function dataURLtoBlob(dataurl: string): Blob {
+  try {
+    const arr = dataurl.split(',');
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  } catch {
+    return new Blob([], { type: 'image/jpeg' });
+  }
+}
+
 export const storageService = {
   /**
    * Realiza upload de uma imagem para o Servidor Express ou Supabase Storage com compressão inteligente
@@ -60,7 +81,44 @@ export const storageService = {
       return { url: null, error: 'Erro ao processar e compactar o arquivo de imagem.' };
     }
 
-    // 2. Tenta enviar para a API central do servidor Express (se disponível)
+    // 2. Se Supabase estiver configurado, tenta salvar prioritariamente no Supabase Storage (Bucket: 'images', Pasta: 'uploads/')
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const fileExt = 'jpg';
+        const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase().substring(0, 20);
+        const fileName = `${folder}/${Date.now()}_${cleanName}.${fileExt}`;
+
+        // Converte o base64 compactado em Blob
+        const blob = dataURLtoBlob(compressedBase64);
+
+        if (blob.size > 0) {
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from(bucket)
+            .upload(fileName, blob, {
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: true,
+            });
+
+          if (!uploadError && uploadData) {
+            const { data } = supabase.storage
+              .from(bucket)
+              .getPublicUrl(fileName);
+
+            if (data?.publicUrl) {
+              console.log('✅ Imagem enviada com sucesso para o Supabase Storage:', data.publicUrl);
+              return { url: data.publicUrl };
+            }
+          } else if (uploadError) {
+            console.warn('⚠️ Aviso de Upload no Supabase Storage:', uploadError.message);
+          }
+        }
+      } catch (err) {
+        console.warn('Aviso: Falha de upload no Supabase Storage, acionando servidor fallback.', err);
+      }
+    }
+
+    // 3. Fallback: Envia para a API central do servidor Express (/api/upload)
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -74,39 +132,7 @@ export const storageService = {
         }
       }
     } catch {
-      // Ignora e prossegue para o Supabase
-    }
-
-    // 3. Se Supabase estiver configurado e o upload do servidor não foi usado, tenta salvar no Supabase Storage
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const fileExt = 'jpg';
-        const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-
-        // Converte o base64 compactado em Blob para o Supabase Storage
-        const resBlob = await fetch(compressedBase64);
-        const blob = await resBlob.blob();
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(bucket)
-          .upload(fileName, blob, {
-            contentType: 'image/jpeg',
-            cacheControl: '3600',
-            upsert: true,
-          });
-
-        if (!uploadError && uploadData) {
-          const { data } = supabase.storage
-            .from(bucket)
-            .getPublicUrl(fileName);
-
-          if (data?.publicUrl) {
-            return { url: data.publicUrl };
-          }
-        }
-      } catch (err) {
-        console.warn('Aviso: Armazenamento do Supabase indisponível. Utilizando imagem compactada.', err);
-      }
+      // Ignora e prossegue para o fallback final
     }
 
     // 4. Fallback final: Retorna a imagem compactada em alta qualidade (~40KB-80KB)

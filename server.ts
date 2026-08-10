@@ -275,14 +275,26 @@ app.post('/api/upload', (req, res) => {
   }
 });
 
+// GET Single Product
+app.get('/api/products/:id', (req, res) => {
+  const { id } = req.params;
+  const db = readDb();
+  const prod = db.products.find((p: any) => String(p.id) === String(id));
+  if (prod) {
+    res.json({ success: true, data: prod });
+  } else {
+    res.status(404).json({ success: false, error: 'Produto não encontrado' });
+  }
+});
+
 // GET Products
 app.get('/api/products', (_req, res) => {
   const db = readDb();
   res.json({ success: true, data: db.products });
 });
 
-// POST Batch/Replace, Create, Update, or Delete Product
-app.post('/api/products', (req, res) => {
+// POST, PUT, PATCH Batch/Replace, Create, Update, or Delete Product
+const handleProductsBatch = (req: express.Request, res: express.Response) => {
   try {
     const body = req.body;
     
@@ -340,7 +352,11 @@ app.post('/api/products', (req, res) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Erro ao salvar produto' });
   }
-});
+};
+
+app.post('/api/products', handleProductsBatch);
+app.put('/api/products', handleProductsBatch);
+app.patch('/api/products', handleProductsBatch);
 
 // PUT, POST or PATCH Single Product Update
 const handleProductUpdate = (req: express.Request, res: express.Response) => {
@@ -403,43 +419,6 @@ app.post('/api/products/reset', (_req, res) => {
   } catch (err: any) {
     console.error('Erro ao restaurar produtos:', err);
     res.status(500).json({ success: false, error: 'Ocorreu um erro interno ao processar a requisição.' });
-  }
-});
-
-// POST Upload Image (Base64 or file endpoint)
-app.post('/api/upload', (req, res) => {
-  try {
-    const { imageBase64, filename } = req.body;
-    if (!imageBase64) {
-      res.status(400).json({ success: false, error: 'Imagem em base64 não fornecida' });
-      return;
-    }
-
-    // Match base64 regex
-    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      // If it's already a URL, return as is
-      if (typeof imageBase64 === 'string' && imageBase64.startsWith('http')) {
-        res.json({ success: true, url: imageBase64 });
-        return;
-      }
-      res.status(400).json({ success: false, error: 'Formato de base64 inválido' });
-      return;
-    }
-
-    const extMatch = matches[1].split('/')[1] || 'png';
-    const cleanExt = extMatch.replace('jpeg', 'jpg');
-    const buffer = Buffer.from(matches[2], 'base64');
-    const safeFilename = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${cleanExt}`;
-    const filePath = path.join(UPLOADS_DIR, safeFilename);
-
-    fs.writeFileSync(filePath, buffer);
-
-    const publicUrl = `/uploads/${safeFilename}`;
-    res.json({ success: true, url: publicUrl });
-  } catch (err: any) {
-    console.error('Erro ao salvar imagem no servidor:', err);
-    res.status(500).json({ success: false, error: 'Erro interno ao processar o upload da imagem.' });
   }
 });
 

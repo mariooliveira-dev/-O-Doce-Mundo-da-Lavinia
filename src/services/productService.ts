@@ -12,13 +12,60 @@ import {
 
 export const productService = {
   /**
+   * Mescla a lista do Supabase com as modificações locais/Express mais recentes
+   */
+  mergeProducts(remote: Product[], localOrExpress: Product[]): Product[] {
+    if (!localOrExpress || localOrExpress.length === 0) return remote;
+    const localMap = new Map<string, Product>();
+    localOrExpress.forEach((p) => localMap.set(String(p.id), p));
+
+    const merged = remote.map((remoteProd) => {
+      const localProd = localMap.get(String(remoteProd.id));
+      if (localProd) {
+        return {
+          ...remoteProd,
+          image: localProd.image || remoteProd.image,
+          price: localProd.price ?? remoteProd.price,
+          name: localProd.name || remoteProd.name,
+          description: localProd.description || remoteProd.description,
+          category: localProd.category || remoteProd.category,
+          available: localProd.available !== undefined ? localProd.available : remoteProd.available,
+        };
+      }
+      return remoteProd;
+    });
+
+    localOrExpress.forEach((localProd) => {
+      if (!merged.some((m) => String(m.id) === String(localProd.id))) {
+        merged.push(localProd);
+      }
+    });
+
+    return merged;
+  },
+
+  /**
    * Busca todos os produtos do Servidor/Supabase (com fallback para cache no localStorage)
    */
   async fetchProducts(): Promise<Product[]> {
     const savedLocal = getSavedProductsFromStorage();
     const deletedSet = getDeletedProductIds();
 
-    // 1. Tenta buscar no Supabase se configurado
+    // 1. Tenta buscar produtos da API do servidor Express primeiro
+    let expressProducts: Product[] | null = null;
+    try {
+      const res = await fetch('/api/products');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          expressProducts = json.data.filter((p: Product) => !deletedSet.has(String(p.id)));
+        }
+      }
+    } catch {
+      // API de servidor indisponível
+    }
+
+    // 2. Tenta buscar no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
@@ -30,7 +77,7 @@ export const productService = {
           const rows = data as DbProduct[];
           const remoteProducts = rows
             .map((item: DbProduct): Product => ({
-              id: item.id,
+              id: String(item.id),
               name: item.name,
               category: item.category,
               description: item.description,
@@ -45,8 +92,9 @@ export const productService = {
             }))
             .filter((p) => !deletedSet.has(String(p.id)));
 
-          saveProductsToStorage(remoteProducts);
-          return remoteProducts;
+          const finalProducts = this.mergeProducts(remoteProducts, expressProducts || savedLocal || []);
+          saveProductsToStorage(finalProducts);
+          return finalProducts;
         } else if (!error && data && data.length === 0 && deletedSet.size === 0) {
           console.log('ℹ️ Tabela public.produtos vazia no Supabase. Populando com produtos iniciais...');
           const initialToSave = savedLocal && savedLocal.length > 0 ? savedLocal : PRODUCTS;
@@ -58,19 +106,9 @@ export const productService = {
       }
     }
 
-    // 2. Tenta buscar da API Central Express do Servidor (/api/products)
-    try {
-      const res = await fetch('/api/products');
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          const filtered = json.data.filter((p: Product) => !deletedSet.has(String(p.id)));
-          saveProductsToStorage(filtered);
-          return filtered;
-        }
-      }
-    } catch {
-      // API de servidor indisponível (ex: host 100% estático)
+    if (expressProducts && expressProducts.length > 0) {
+      saveProductsToStorage(expressProducts);
+      return expressProducts;
     }
 
     // 3. Fallback: LocalStorage ou PRODUCTS padrão (filtrando itens excluídos)
