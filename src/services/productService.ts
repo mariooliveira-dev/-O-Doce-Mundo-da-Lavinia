@@ -144,64 +144,52 @@ export const productService = {
    * Atualiza dados de um produto existente no Servidor, Supabase e localStorage
    */
   async updateProduct(id: string, updated: Partial<Product>, fullProduct?: Product): Promise<boolean> {
+    const payloadToSave = fullProduct || (updated as Product);
+
     // 1. Atualiza no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
-        const dbPayload: Record<string, any> = { updated_at: new Date().toISOString() };
-        if (updated.name !== undefined) dbPayload.name = updated.name;
-        if (updated.category !== undefined) dbPayload.category = updated.category;
-        if (updated.description !== undefined) dbPayload.description = updated.description;
-        if (updated.price !== undefined) dbPayload.price = updated.price;
-        if (updated.image !== undefined) dbPayload.image = updated.image;
-        if (updated.badge !== undefined) dbPayload.badge = updated.badge || null;
-        if (updated.customizable !== undefined) dbPayload.customizable = updated.customizable;
-        if (updated.available !== undefined) dbPayload.available = updated.available;
-        if (updated.options !== undefined) dbPayload.options = updated.options || null;
+        if (fullProduct) {
+          const fullDbPayload: DbProduct = {
+            id: fullProduct.id || id,
+            name: fullProduct.name,
+            category: fullProduct.category,
+            description: fullProduct.description,
+            price: fullProduct.price,
+            image: fullProduct.image,
+            badge: fullProduct.badge || null,
+            rating: fullProduct.rating || 5.0,
+            review_count: fullProduct.reviewCount || 1,
+            customizable: Boolean(fullProduct.customizable),
+            available: fullProduct.available !== false,
+            options: fullProduct.options || null,
+            updated_at: new Date().toISOString(),
+          };
 
-        // Tenta UPDATE direto no Supabase para alterar apenas os campos fornecidos sem violar NOT NULL
-        let { error, count } = await (supabase.from('produtos') as any)
-          .update(dbPayload)
-          .eq('id', id);
+          const upsertRes = await (supabase.from('produtos') as any)
+            .upsert([fullDbPayload], { onConflict: 'id' });
 
-        if (error && (error.message?.includes('available') || error.message?.includes('column'))) {
-          delete dbPayload.available;
-          const retryRes = await (supabase.from('produtos') as any)
-            .update(dbPayload)
-            .eq('id', id);
-          if (!retryRes.error) error = null;
-        }
-
-        // Se o produto não existia no Supabase ou se o update falhou, faz UPSERT completo com todos os campos
-        if (error || fullProduct) {
-          if (fullProduct) {
-            const fullDbPayload: DbProduct = {
-              id: fullProduct.id || id,
-              name: fullProduct.name,
-              category: fullProduct.category,
-              description: fullProduct.description,
-              price: fullProduct.price,
-              image: fullProduct.image,
-              badge: fullProduct.badge || null,
-              rating: fullProduct.rating || 5.0,
-              review_count: fullProduct.reviewCount || 1,
-              customizable: Boolean(fullProduct.customizable),
-              available: fullProduct.available !== false,
-              options: fullProduct.options || null,
-              updated_at: new Date().toISOString(),
-            };
-
-            const upsertRes = await (supabase.from('produtos') as any)
-              .upsert([fullDbPayload], { onConflict: 'id' });
-
-            if (upsertRes.error && (upsertRes.error.message?.includes('available') || upsertRes.error.message?.includes('column'))) {
-              const fallbackPayload = { ...fullDbPayload };
-              delete (fallbackPayload as any).available;
-              await (supabase.from('produtos') as any)
-                .upsert([fallbackPayload], { onConflict: 'id' });
-            }
+          if (upsertRes.error && (upsertRes.error.message?.includes('available') || upsertRes.error.message?.includes('column'))) {
+            const fallbackPayload = { ...fullDbPayload };
+            delete (fallbackPayload as any).available;
+            await (supabase.from('produtos') as any)
+              .upsert([fallbackPayload], { onConflict: 'id' });
           }
         } else {
-          console.log('✅ Produto atualizado no Supabase ID:', id);
+          const dbPayload: Record<string, any> = { updated_at: new Date().toISOString() };
+          if (updated.name !== undefined) dbPayload.name = updated.name;
+          if (updated.category !== undefined) dbPayload.category = updated.category;
+          if (updated.description !== undefined) dbPayload.description = updated.description;
+          if (updated.price !== undefined) dbPayload.price = updated.price;
+          if (updated.image !== undefined) dbPayload.image = updated.image;
+          if (updated.badge !== undefined) dbPayload.badge = updated.badge || null;
+          if (updated.customizable !== undefined) dbPayload.customizable = updated.customizable;
+          if (updated.available !== undefined) dbPayload.available = updated.available;
+          if (updated.options !== undefined) dbPayload.options = updated.options || null;
+
+          await (supabase.from('produtos') as any)
+            .update(dbPayload)
+            .eq('id', id);
         }
       } catch (err) {
         console.error('Falha ao atualizar produto no Supabase:', err);
@@ -213,7 +201,7 @@ export const productService = {
       await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
+        body: JSON.stringify(payloadToSave),
       });
     } catch {
       // Ignora
@@ -233,18 +221,10 @@ export const productService = {
           .delete()
           .eq('id', id);
 
-        // Se id for numérico (ex: "1"), tenta deletar também por número se houve erro
         if (error && !isNaN(Number(id))) {
-          const retry = await (supabase.from('produtos') as any)
+          await (supabase.from('produtos') as any)
             .delete()
             .eq('id', Number(id));
-          if (!retry.error) error = null;
-        }
-
-        if (error) {
-          console.error('❌ Erro ao deletar produto no Supabase:', error.message);
-        } else {
-          console.log('✅ Produto removido do Supabase ID:', id);
         }
       } catch (err) {
         console.error('Falha ao deletar produto no Supabase:', err);

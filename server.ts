@@ -179,7 +179,7 @@ function readDb() {
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
     const db = JSON.parse(raw);
     if (!db.config) db.config = DEFAULT_SITE_CONFIG;
-    if (!db.products || !Array.isArray(db.products) || db.products.length === 0) db.products = DEFAULT_PRODUCTS;
+    if (!db.products || !Array.isArray(db.products)) db.products = DEFAULT_PRODUCTS;
     return db;
   } catch (err) {
     console.error('Error reading db.json:', err);

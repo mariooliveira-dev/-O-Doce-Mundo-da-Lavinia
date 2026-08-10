@@ -270,13 +270,14 @@ export const AdminPanelModal: React.FC = () => {
   const saveEditedProduct = async (id: string) => {
     const existingProd = products.find((p) => p.id === id);
     const finalPrice = parsePrice(editPrice, existingProd?.price || 0);
+    const finalImage = editImage.trim() || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80';
 
     setIsSavingProduct(true);
     try {
       await updateProduct(id, {
         name: editName.trim() || existingProd?.name || 'Doce sem nome',
         price: finalPrice,
-        image: editImage.trim() || existingProd?.image || '',
+        image: finalImage,
         description: editDescription.trim() || existingProd?.description || '',
         badge: editBadge.trim() || undefined,
         available: editAvailable,
@@ -895,7 +896,13 @@ export const AdminPanelModal: React.FC = () => {
                               <img
                                 src={isEditing ? editImage : prod.image}
                                 alt={prod.name}
-                                className="w-16 h-16 rounded-xl object-cover border border-pink-200"
+                                onClick={() => {
+                                  if (!isEditing) startEditingProduct(prod);
+                                }}
+                                className={`w-16 h-16 rounded-xl object-cover border border-pink-200 cursor-pointer ${
+                                  !isEditing ? 'hover:opacity-80 transition-opacity' : ''
+                                }`}
+                                title={!isEditing ? 'Clique para editar este produto' : 'Foto do produto'}
                               />
                               {isEditing && (
                                 <label className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center text-white cursor-pointer opacity-90 hover:opacity-100">
@@ -916,30 +923,57 @@ export const AdminPanelModal: React.FC = () => {
 
                             <div className="flex-1 min-w-0">
                               {isEditing ? (
-                                <div className="space-y-1.5">
+                                <div className="space-y-2">
                                   <input
                                     type="text"
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
-                                    className="w-full px-2 py-1 border border-pink-300 rounded text-xs font-bold text-[#3D231D]"
+                                    placeholder="Nome do doce"
+                                    className="w-full px-2.5 py-1 border border-pink-300 rounded-lg text-xs font-bold text-[#3D231D]"
                                   />
                                   <input
                                     type="text"
                                     value={editDescription}
                                     onChange={(e) => setEditDescription(e.target.value)}
                                     placeholder="Descrição curta"
-                                    className="w-full px-2 py-1 border border-pink-200 rounded text-2xs text-[#5C3A21]"
+                                    className="w-full px-2.5 py-1 border border-pink-200 rounded-lg text-2xs text-[#5C3A21]"
                                   />
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-2xs font-bold text-gray-500">URL Foto:</span>
-                                    <input
-                                      type="text"
-                                      value={editImage}
-                                      onChange={(e) => setEditImage(e.target.value)}
-                                      className="flex-1 px-2 py-0.5 border border-pink-200 rounded text-2xs"
-                                    />
+                                  
+                                  {/* Photo Controls */}
+                                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 bg-pink-50/50 rounded-xl border border-pink-100">
+                                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                      <span className="text-3xs font-bold text-gray-500 shrink-0">Foto:</span>
+                                      <input
+                                        type="text"
+                                        value={editImage}
+                                        onChange={(e) => setEditImage(e.target.value)}
+                                        placeholder="Cole a URL ou envie foto"
+                                        className="w-full px-2 py-0.5 border border-pink-200 rounded text-3xs bg-white"
+                                      />
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <label className="px-2 py-1 rounded-lg bg-[#E85D75] text-white text-3xs font-bold flex items-center gap-1 cursor-pointer hover:bg-[#d44c63] transition-colors">
+                                        <Upload className="w-3 h-3" />
+                                        <span>Trocar Foto</span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) => handleFileUpload(e, (url) => setEditImage(url))}
+                                        />
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditImage('https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80')}
+                                        className="px-2 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 text-3xs font-bold transition-colors"
+                                        title="Usar imagem padrão"
+                                      >
+                                        Limpar
+                                      </button>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-2 pt-1">
+
+                                  <div className="flex items-center gap-2 pt-0.5">
                                     <label className="flex items-center gap-1.5 cursor-pointer text-2xs font-bold text-[#3D231D]">
                                       <input
                                         type="checkbox"

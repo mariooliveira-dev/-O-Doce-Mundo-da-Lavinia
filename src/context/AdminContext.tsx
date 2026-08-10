@@ -206,6 +206,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     queryClient.setQueryData(QUERY_KEY_PRODUCTS, newProducts);
     saveProductsToStorage(newProducts);
     await productService.deleteProduct(id);
+    await productService.saveAllProducts(newProducts);
     queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTS });
   };
 
