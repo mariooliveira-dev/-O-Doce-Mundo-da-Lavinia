@@ -12,29 +12,17 @@ import {
 
 export const productService = {
   /**
-   * Mescla a lista do Supabase com as modificações locais/Express mais recentes
+   * Mescla a lista do Supabase com produtos criados localmente que ainda não foram sincronizados.
+   * IMPORTANTE: O Supabase (remote) é a fonte de verdade absoluta. Campos remotos (como image, price)
+   * NUNCA devem ser sobrescritos por dados antigos do localStorage.
    */
   mergeProducts(remote: Product[], localOrExpress: Product[]): Product[] {
     if (!localOrExpress || localOrExpress.length === 0) return remote;
-    const localMap = new Map<string, Product>();
-    localOrExpress.forEach((p) => localMap.set(String(p.id), p));
 
-    const merged = remote.map((remoteProd) => {
-      const localProd = localMap.get(String(remoteProd.id));
-      if (localProd) {
-        return {
-          ...remoteProd,
-          image: localProd.image || remoteProd.image,
-          price: localProd.price ?? remoteProd.price,
-          name: localProd.name || remoteProd.name,
-          description: localProd.description || remoteProd.description,
-          category: localProd.category || remoteProd.category,
-          available: localProd.available !== undefined ? localProd.available : remoteProd.available,
-        };
-      }
-      return remoteProd;
-    });
+    // Mantém a lista remota intacta (Fonte de Verdade)
+    const merged = [...remote];
 
+    // Adiciona apenas produtos criados localmente que não existem no Supabase
     localOrExpress.forEach((localProd) => {
       if (!merged.some((m) => String(m.id) === String(localProd.id))) {
         merged.push(localProd);

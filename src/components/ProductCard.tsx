@@ -45,6 +45,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             !isAvailable ? 'brightness-90' : ''
           }`}
           referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (!target.dataset.fallback) {
+              target.dataset.fallback = 'true';
+              target.src = 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80';
+            }
+          }}
         />
 
         {/* Hover Lightbox Overlay */}
