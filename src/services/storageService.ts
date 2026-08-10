@@ -77,7 +77,7 @@ export const storageService = {
       // Ignora e prossegue para o Supabase
     }
 
-    // 3. Se Supabase estiver configurado, tenta salvar no Supabase Storage
+    // 3. Se Supabase estiver configurado e o upload do servidor não foi usado, tenta salvar no Supabase Storage
     if (isSupabaseConfigured && supabase) {
       try {
         const fileExt = 'jpg';
@@ -87,7 +87,7 @@ export const storageService = {
         const resBlob = await fetch(compressedBase64);
         const blob = await resBlob.blob();
 
-        const { error: uploadError } = await supabase.storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from(bucket)
           .upload(fileName, blob, {
             contentType: 'image/jpeg',
@@ -95,7 +95,7 @@ export const storageService = {
             upsert: true,
           });
 
-        if (!uploadError) {
+        if (!uploadError && uploadData) {
           const { data } = supabase.storage
             .from(bucket)
             .getPublicUrl(fileName);
@@ -105,11 +105,11 @@ export const storageService = {
           }
         }
       } catch (err) {
-        console.warn('Erro ou bucket não encontrado no Supabase Storage:', err);
+        console.warn('Aviso: Armazenamento do Supabase indisponível. Utilizando imagem compactada.', err);
       }
     }
 
-    // 4. Retorna a imagem compactada (~50KB) que salva perfeitamente no banco de dados e localStorage sem estourar limites!
+    // 4. Fallback final: Retorna a imagem compactada em alta qualidade (~40KB-80KB)
     return { url: compressedBase64 };
   },
 

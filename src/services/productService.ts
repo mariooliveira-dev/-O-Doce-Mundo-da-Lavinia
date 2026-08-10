@@ -155,7 +155,18 @@ export const productService = {
   async updateProduct(id: string, updated: Partial<Product>, fullProduct?: Product): Promise<boolean> {
     const payloadToSave = fullProduct || (updated as Product);
 
-    // 1. Atualiza no Supabase se configurado
+    // 1. Atualiza no localStorage imediatamente
+    const currentList = getSavedProductsFromStorage() || PRODUCTS;
+    const existingIdx = currentList.findIndex((p) => String(p.id) === String(id));
+    let newList = [...currentList];
+    if (existingIdx >= 0) {
+      newList[existingIdx] = { ...newList[existingIdx], ...updated, id };
+    } else if (fullProduct) {
+      newList.push(fullProduct);
+    }
+    saveProductsToStorage(newList);
+
+    // 2. Atualiza no Supabase se configurado
     if (isSupabaseConfigured && supabase) {
       try {
         if (fullProduct) {
@@ -201,19 +212,24 @@ export const productService = {
             .eq('id', id);
         }
       } catch (err) {
-        console.error('Falha ao atualizar produto no Supabase:', err);
+        console.warn('Aviso ao atualizar produto no Supabase:', err);
       }
     }
 
-    // 2. Atualiza na API do Servidor Central Express (/api/products/:id)
+    // 3. Atualiza na API do Servidor Central Express usando requisição POST segura
     try {
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', product: payloadToSave, id }),
+      });
       await fetch(`/api/products/${id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payloadToSave),
       });
     } catch {
-      // Ignora
+      // Ignora erro se ambiente de hospedagem for estático
     }
 
     return true;
@@ -248,12 +264,16 @@ export const productService = {
       }
     }
 
-    // 4. Deleta na API do Servidor Central Express com método DELETE e POST fallback
+    // 4. Deleta na API do Servidor Central Express com requisições POST seguras
     try {
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id }),
+      });
       await fetch(`/api/products/delete/${id}`, { method: 'POST' });
-      await fetch(`/api/products/${id}`, { method: 'DELETE' });
     } catch {
-      // Ignora
+      // Ignora erro de ambiente estático
     }
 
     return true;

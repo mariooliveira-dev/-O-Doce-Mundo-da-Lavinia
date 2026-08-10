@@ -237,13 +237,50 @@ app.post('/api/config', (req, res) => {
   }
 });
 
+// Ensure uploads directory is served statically
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Image Upload Endpoint
+app.post('/api/upload', (req, res) => {
+  try {
+    const { imageBase64 } = req.body || {};
+    if (!imageBase64) {
+      res.status(400).json({ success: false, error: 'Imagem base64 não fornecida' });
+      return;
+    }
+
+    // Se já for uma URL externa HTTP/HTTPS
+    if (typeof imageBase64 === 'string' && (imageBase64.startsWith('http://') || imageBase64.startsWith('https://'))) {
+      res.json({ success: true, url: imageBase64 });
+      return;
+    }
+
+    const matches = imageBase64.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+    if (!matches) {
+      res.json({ success: true, url: imageBase64 });
+      return;
+    }
+
+    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+    const base64Data = matches[2];
+    const safeFilename = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const filePath = path.join(UPLOADS_DIR, safeFilename);
+
+    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+    res.json({ success: true, url: `/uploads/${safeFilename}` });
+  } catch {
+    // Se não puder salvar no disco local, retorna a própria imagem base64 compactada como URL válida
+    res.json({ success: true, url: req.body?.imageBase64 });
+  }
+});
+
 // GET Products
 app.get('/api/products', (_req, res) => {
   const db = readDb();
   res.json({ success: true, data: db.products });
 });
 
-// POST Batch/Replace or Create Product
+// POST Batch/Replace, Create, Update, or Delete Product
 app.post('/api/products', (req, res) => {
   try {
     const body = req.body;
@@ -255,25 +292,44 @@ app.post('/api/products', (req, res) => {
       return;
     }
 
-    // Otherwise single product insert/update
-    if (!body || !body.name) {
+    if (!body || typeof body !== 'object') {
+      res.status(400).json({ success: false, error: 'Dados inválidos' });
+      return;
+    }
+
+    // Action: delete
+    if (body.action === 'delete' || body.delete) {
+      const deleteId = body.id || body.productId;
+      if (!deleteId) {
+        res.status(400).json({ success: false, error: 'ID não informado' });
+        return;
+      }
+      const db = readDb();
+      const updatedProducts = db.products.filter((p: any) => String(p.id) !== String(deleteId));
+      writeDb({ products: updatedProducts });
+      res.json({ success: true, data: updatedProducts });
+      return;
+    }
+
+    const targetProduct = body.product || body;
+    if (!targetProduct || (!targetProduct.name && !targetProduct.id)) {
       res.status(400).json({ success: false, error: 'Dados do produto inválidos' });
       return;
     }
 
     const db = readDb();
-    const existingIndex = db.products.findIndex((p: any) => p.id === body.id);
+    const existingIndex = db.products.findIndex((p: any) => String(p.id) === String(targetProduct.id));
     let updatedProducts = [...db.products];
 
     if (existingIndex >= 0) {
-      updatedProducts[existingIndex] = { ...updatedProducts[existingIndex], ...body };
+      updatedProducts[existingIndex] = { ...updatedProducts[existingIndex], ...targetProduct };
     } else {
       const newProduct = {
-        ...body,
-        id: body.id || `prod-${Date.now()}`,
-        rating: body.rating || 5.0,
-        reviewCount: body.reviewCount || 1,
-        available: body.available !== false,
+        ...targetProduct,
+        id: targetProduct.id || `prod-${Date.now()}`,
+        rating: targetProduct.rating || 5.0,
+        reviewCount: targetProduct.reviewCount || 1,
+        available: targetProduct.available !== false,
       };
       updatedProducts.push(newProduct);
     }

@@ -92,6 +92,8 @@ export const AdminPanelModal: React.FC = () => {
 
   // Editing existing product state
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [adminToast, setAdminToast] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState<string>('');
   const [editName, setEditName] = useState<string>('');
   const [editImage, setEditImage] = useState<string>('');
@@ -237,7 +239,7 @@ export const AdminPanelModal: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        alert('A imagem é muito grande. Escolha uma foto de até 10MB.');
+        setAdminToast('A imagem é muito grande. Escolha uma foto de até 10MB.');
         return;
       }
       setIsUploadingPhoto(true);
@@ -246,11 +248,11 @@ export const AdminPanelModal: React.FC = () => {
         if (url) {
           onSuccess(url);
         } else {
-          alert('Não foi possível processar a imagem. Tente uma foto menor ou insira um link direto.');
+          setAdminToast('Não foi possível processar a imagem. Tente uma foto menor ou insira um link direto.');
         }
       } catch (err) {
         console.error('Erro no upload de foto:', err);
-        alert('Ocorreu um erro ao enviar a foto.');
+        setAdminToast('Ocorreu um erro ao enviar a foto.');
       } finally {
         setIsUploadingPhoto(false);
       }
@@ -293,7 +295,7 @@ export const AdminPanelModal: React.FC = () => {
   const handleSaveNewProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProdName.trim() || !newProdPrice.trim()) {
-      alert('Por favor, informe o nome e o preço do produto.');
+      setAdminToast('Por favor, informe o nome e o preço do produto.');
       return;
     }
 
@@ -532,6 +534,19 @@ export const AdminPanelModal: React.FC = () => {
           ) : (
             /* Logged In Dashboard Interface */
             <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              
+              {adminToast && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-bold text-red-700 flex items-center justify-between">
+                  <span>{adminToast}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAdminToast(null)}
+                    className="p-1 text-red-500 hover:text-red-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
               
               {/* Top Navigation Tabs & Quick Actions */}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#F4ACB7]/30">
@@ -1070,18 +1085,37 @@ export const AdminPanelModal: React.FC = () => {
                                   >
                                     <Edit2 className="w-4 h-4" />
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (confirm(`Excluir o doce "${prod.name}" do cardápio?`)) {
-                                        deleteProduct(prod.id);
-                                      }
-                                    }}
-                                    className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
-                                    title="Excluir do cardápio"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                  {deletingProductId === prod.id ? (
+                                    <div className="flex items-center gap-1 bg-red-50 p-1 rounded-xl border border-red-200">
+                                      <span className="text-3xs font-bold text-red-700 px-1">Excluir?</span>
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          await deleteProduct(prod.id);
+                                          setDeletingProductId(null);
+                                        }}
+                                        className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-3xs font-bold rounded-lg transition-colors cursor-pointer"
+                                      >
+                                        Sim
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setDeletingProductId(null)}
+                                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-3xs font-bold rounded-lg transition-colors cursor-pointer"
+                                      >
+                                        Não
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setDeletingProductId(prod.id)}
+                                      className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+                                      title="Excluir do cardápio"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
                                 </>
                               )}
                             </div>
